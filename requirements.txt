@@ -1,15 +1,12 @@
 asgiref==3.11.1
 Django==4.2.7
 gunicorn
-mysqlclient
-packaging
+psycopg2-binary
+whitenoise
 pillow
-PyMySQL
 sqlparse==0.5.5
 tzdata==2026.2
 django-ratelimit
 celery
 redis
 django-redis
-psycopg2-binary
-whitenoise
