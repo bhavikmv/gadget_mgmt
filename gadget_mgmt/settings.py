@@ -60,14 +60,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gadget_mgmt.wsgi.application'
 
+import os
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'gadget_db_04pu',
-        'USER': 'gadget_db_04pu_user',
-        'PASSWORD': 'your_password_here',
-        'HOST': 'dpg-d7sqh2i8qa3s73esr14g-a',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
 
