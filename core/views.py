@@ -84,7 +84,7 @@ def request_gadget_view(request):
                     requested_at__gte=timezone.now() - timedelta(seconds=5)
                 )
                 for booking in created_bookings:
-                    send_notification_email_task.delay(booking.id, 'placed')
+                    send_notification_email_task(booking.id, 'placed')
                 
                 messages.success(request, f'{len(bookings_to_create)} request(s) submitted successfully!')
                 return redirect('dashboard')
