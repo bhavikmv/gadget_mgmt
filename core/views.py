@@ -77,12 +77,8 @@ def request_gadget_view(request):
                 # Use bulk_create for high performance (one SQL query instead of N)
                 Booking.objects.bulk_create(bookings_to_create)
                 
-                # bulk_create doesn't trigger signals, so we manually trigger the email task
-                # for each newly created booking.
-                created_bookings = Booking.objects.filter(
-                    student=request.user, 
-                    requested_at__gte=timezone.now() - timedelta(seconds=5)
-                )
+                created_bookings = Booking.objects.bulk_create(bookings_to_create)
+
                 for booking in created_bookings:
                     send_notification_email_task(booking.id, 'placed')
                 
