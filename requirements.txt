@@ -1,0 +1,13 @@
+asgiref==3.11.1
+Django==4.2.7
+gunicorn
+mysqlclient
+packaging
+pillow
+PyMySQL
+sqlparse==0.5.5
+tzdata==2026.2
+django-ratelimit
+celery
+redis
+django-redis

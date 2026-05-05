@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Category – GadgetMS{% endblock %}
+{% block nav_admin_cats %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ action }} Category</h1>
+  <p>{% if action == 'Add' %}Create a new gadget category.{% else %}Update category details.{% endif %}</p>
+</div>
+
+<div style="max-width:560px;">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Category Name</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Laptop, Camera, Accessories"
+               value="{{ form.name.value|default:'' }}" required>
+        {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (Optional)</label>
+        <textarea name="description" class="form-control" rows="2"
+                  placeholder="Brief description of the category...">{{ form.description.value|default:'' }}</textarea>
+      </div>
+      <div class="flex-gap">
+        <button type="submit" class="btn btn-primary">{{ action }} Category</button>
+        <a href="{% url 'admin_categories' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

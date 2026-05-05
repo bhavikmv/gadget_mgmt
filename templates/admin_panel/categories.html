@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Manage Categories – GadgetMS{% endblock %}
+{% block nav_admin_cats %}active{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div>
+    <h1>Category Management</h1>
+    <p>Add, edit, and manage gadget categories.</p>
+  </div>
+  <a href="{% url 'admin_category_add' %}" class="btn btn-primary">+ Add Category</a>
+</div>
+
+<div class="card">
+  {% if categories %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Description</th><th>Gadgets Count</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">{{ c.id }}</td>
+          <td><strong>{{ c.name }}</strong></td>
+          <td><span style="font-size:12px;color:var(--text2);">{{ c.description|truncatechars:60|default:"No description" }}</span></td>
+          <td><span class="qty-badge">{{ c.gadget_count }}</span></td>
+          <td>
+            <a href="{% url 'admin_category_edit' c.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            <form method="post" action="{% url 'admin_category_delete' c.id %}" style="display:inline;"
+                  onsubmit="return confirm('Delete {{ c.name }}? This will set category to null for related gadgets.')">
+              {% csrf_token %}
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">📁</div>
+    <p>No categories yet. <a href="{% url 'admin_category_add' %}" style="color:var(--accent);">Add your first category →</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Gadget – GadgetMS{% endblock %}
+{% block nav_admin_gadgets %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ action }} Gadget</h1>
+  <p>{% if action == 'Add' %}Add a new gadget to the system.{% else %}Update gadget details.{% endif %}</p>
+</div>
+
+<div style="max-width:560px;">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Gadget Name</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Dell Latitude Laptop"
+               value="{{ form.name.value|default:'' }}" required>
+        {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-control">
+          {% for val, label in form.fields.category.choices %}
+          <option value="{{ val }}" {% if form.category.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3"
+                  placeholder="Brief description of the gadget...">{{ form.description.value|default:'' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total Quantity</label>
+        <input type="number" name="quantity" class="form-control" min="1"
+               value="{{ form.quantity.value|default:1 }}" required>
+        {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}
+                 style="width:18px;height:18px;accent-color:var(--accent);">
+          <span class="form-label" style="margin:0;">Active (visible to students)</span>
+        </label>
+      </div>
+      <div class="flex-gap">
+        <button type="submit" class="btn btn-primary">{{ action }} Gadget</button>
+        <a href="{% url 'admin_gadgets' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=gadget_ms
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=adminpassword
+    ports:
+      - "3306:3306"
+
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+
+  web:
+    build: .
+    command: gunicorn gadget_mgmt.wsgi:application -c gunicorn_config.py
+    volumes:
+      - .:/app
+    environment:
+      - DB_NAME=gadget_ms
+      - DB_USER=admin
+      - DB_PASSWORD=adminpassword
+      - DB_HOST=db
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=False
+    depends_on:
+      - db
+      - redis
+
+  celery_worker:
+    build: .
+    command: celery -a gadget_mgmt worker -l info
+    volumes:
+      - .:/app
+    environment:
+      - DB_NAME=gadget_ms
+      - DB_USER=admin
+      - DB_PASSWORD=adminpassword
+      - DB_HOST=db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./static:/app/static
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+volumes:
+  mysql_data:

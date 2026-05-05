@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Browse Gadgets – GadgetMS{% endblock %}
+{% block nav_gadgets %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Available Gadgets</h1>
+  <p>Browse and search all gadgets available for borrowing.</p>
+</div>
+
+<form method="get" class="search-bar">
+  <input type="text" name="q" class="form-control" placeholder="Search gadgets by name or category..." value="{{ query }}">
+  <button type="submit" class="btn btn-primary">Search</button>
+  {% if query %}<a href="{% url 'gadgets' %}" class="btn btn-ghost">Clear</a>{% endif %}
+</form>
+
+{% if gadgets %}
+<p style="color:var(--text2);font-size:13px;margin-bottom:16px;">{{ gadgets.count }} gadget{{ gadgets.count|pluralize }} found</p>
+<div class="gadgets-grid">
+  {% for g in gadgets %}
+  <div class="gadget-card">
+    <div class="gadget-icon">
+      {% if g.category == 'laptop' %}💻
+      {% elif g.category == 'tablet' %}📱
+      {% elif g.category == 'camera' %}📷
+      {% elif g.category == 'projector' %}📽️
+      {% elif g.category == 'calculator' %}🧮
+      {% else %}🔧{% endif %}
+    </div>
+    <div class="gadget-name">{{ g.name }}</div>
+    <div class="gadget-category">{{ g.category.name|default:"Uncategorized" }}</div>
+    {% if g.description %}
+    <p style="font-size:13px;color:var(--text2);margin-top:8px;">{{ g.description|truncatechars:80 }}</p>
+    {% endif %}
+    <div class="gadget-qty">
+      Total: <span class="qty-badge">{{ g.quantity }}</span>
+    </div>
+    <div style="margin-top:14px;">
+      <a href="{% url 'request_gadget' %}?gadget={{ g.id }}" class="btn btn-primary btn-sm">Request This</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="icon">🔍</div>
+  <p>No gadgets found{% if query %} for "{{ query }}"{% endif %}.</p>
+</div>
+{% endif %}
+{% endblock %}

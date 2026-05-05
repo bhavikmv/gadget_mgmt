@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Gadget Management System{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h2>⚙️ GadgetMS</h2>
+      <span>Management System</span>
+    </div>
+    <nav class="sidebar-nav">
+      {% if user.is_authenticated %}
+        {% if user.is_staff %}
+          <div class="nav-label">Admin</div>
+          <a href="{% url 'admin_dashboard' %}" class="nav-item {% block nav_admin_dash %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </a>
+          <a href="{% url 'admin_categories' %}" class="nav-item {% block nav_admin_cats %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            Categories
+          </a>
+          <a href="{% url 'admin_gadgets' %}" class="nav-item {% block nav_admin_gadgets %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Gadgets
+          </a>
+          <a href="{% url 'admin_requests' %}" class="nav-item {% block nav_admin_reqs %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            All Requests
+          </a>
+        {% else %}
+          <div class="nav-label">Student</div>
+          <a href="{% url 'dashboard' %}" class="nav-item {% block nav_dash %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </a>
+          <a href="{% url 'gadgets' %}" class="nav-item {% block nav_gadgets %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Gadgets
+          </a>
+          <a href="{% url 'request_gadget' %}" class="nav-item {% block nav_request %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            New Request
+          </a>
+        {% endif %}
+      {% endif %}
+    </nav>
+    {% if user.is_authenticated %}
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar">{{ user.first_name|first }}{{ user.last_name|first }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ user.get_full_name }}</div>
+          <div class="user-role">{% if user.is_staff %}Administrator{% else %}{{ user.student_profile.gr_number|default:'Student' }}{% endif %}</div>
+        </div>
+      </div>
+      <a href="{% url 'logout' %}" class="btn btn-ghost" style="width:100%;margin-top:10px;justify-content:center;">
+        Logout
+      </a>
+    </div>
+    {% endif %}
+  </aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="mobile-header">
+      <button class="menu-toggle" id="menu-toggle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      <h2>⚙️ GadgetMS</h2>
+      <div style="width: 24px;"></div> <!-- spacer -->
+    </header>
+
+    {% if messages %}
+    <div class="messages-wrap">
+      {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const toggle = document.getElementById('menu-toggle');
+
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+    });
+  }
+</script>
+</body>
+</html>

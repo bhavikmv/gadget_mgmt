@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% block title %}New Request – GadgetMS{% endblock %}
+{% block nav_request %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>New Gadget Request</h1>
+  <p>Fill in the form below to request a gadget.</p>
+</div>
+
+<div class="grid-2-1 responsive-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start;">
+
+  <!-- REQUEST FORM -->
+  <div class="card">
+    <div style="background: #ff4d4d; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: 700; text-align: center;">
+      MULTI-GADGET FORM ACTIVE
+    </div>
+    <h2 style="font-size:16px;font-weight:700;margin-bottom:20px;">Request Details</h2>
+    <form method="post" id="request-form" onsubmit="console.log('DEBUG: Form is submitting...');">
+      {% csrf_token %}
+      {{ formset.management_form }}
+
+      <!-- Student Info (auto-filled, read-only) -->
+      <div class="form-group">
+        <label class="form-label">Student Name</label>
+        <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly style="opacity:0.6;cursor:not-allowed;">
+      </div>
+      <div class="responsive-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">GR Number</label>
+          <input type="text" class="form-control" value="{{ user.student_profile.gr_number }}" readonly style="opacity:0.6;cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="text" class="form-control" value="{{ user.email }}" readonly style="opacity:0.6;cursor:not-allowed;">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div id="form-container">
+        {% for form in formset %}
+        <div class="gadget-form-row card" style="background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 15px; position: relative;">
+          {% if not forloop.first %}
+          <button type="button" class="remove-form-btn" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 20px;">&times;</button>
+          {% endif %}
+          
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger" style="font-size: 12px; margin-bottom: 10px; padding: 8px;">{{ form.non_field_errors.0 }}</div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Select Gadget</label>
+            {{ form.gadget }}
+            {% if form.gadget.errors %}<div class="form-error">{{ form.gadget.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="responsive-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Duration (Days)</label>
+              {{ form.days }}
+              {% if form.days.errors %}<div class="form-error">{{ form.days.errors.0 }}</div>{% endif %}
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              {{ form.quantity }}
+              {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="row-info" style="font-size: 12px; color: var(--text2); display: flex; justify-content: space-between; margin-top: 5px;">
+            <span class="end-date-info">End Date: <span class="val">–</span></span>
+            <span class="availability-info">Availability: <span class="val">–</span></span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button type="button" id="add-form-btn" class="btn" style="width:100%; margin-bottom: 20px; background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.3); color: var(--text);">
+        + Add Another Gadget
+      </button>
+
+      {% if formset.non_form_errors %}
+        <div class="alert alert-danger" style="margin-bottom:16px;">{{ formset.non_form_errors.0 }}</div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%;justify-content:center;padding:13px;">
+        Submit All Requests
+      </button>
+      
+      <!-- Debug Button -->
+      <button type="button" onclick="console.log('DEBUG: Total Forms:', document.getElementById('id_form-TOTAL_FORMS').value); console.log('DEBUG: Form Data:', new FormData(document.getElementById('request-form')));" style="width:100%; margin-top: 10px; background: #333; color: #eee; font-size: 10px; opacity: 0.5;">
+        Debug: Log Form Status
+      </button>
+    </form>
+  </div>
+
+  <!-- GADGET INFO PANEL (Legacy/Context) -->
+  <div>
+    <div class="card">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📌 Booking Rules</h3>
+      <ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2;">
+        <li>✅ Maximum booking duration: <strong style="color:var(--text)">15 days</strong></li>
+        <li>✅ Start date is always <strong style="color:var(--text)">today</strong></li>
+        <li>✅ Availability checked in real time</li>
+        <li>✅ Requests are reviewed by admin</li>
+        <li>⚠️ Return gadget on or before end date</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- Template for new forms -->
+<div id="empty-form" style="display:none;">
+  <div class="gadget-form-row card" style="background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 15px; position: relative;">
+    <button type="button" class="remove-form-btn" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 20px;">&times;</button>
+    
+    <div class="form-group">
+      <label class="form-label">Select Gadget</label>
+      {{ formset.empty_form.gadget }}
+    </div>
+
+    <div class="responsive-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label class="form-label">Duration (Days)</label>
+        {{ formset.empty_form.days }}
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        {{ formset.empty_form.quantity }}
+      </div>
+    </div>
+
+    <div class="row-info" style="font-size: 12px; color: var(--text2); display: flex; justify-content: space-between; margin-top: 5px;">
+      <span class="end-date-info">End Date: <span class="val">–</span></span>
+      <span class="availability-info">Availability: <span class="val">–</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const formContainer = document.getElementById('form-container');
+  const addFormBtn = document.getElementById('add-form-btn');
+  const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+  const emptyForm = document.getElementById('empty-form').innerHTML;
+
+  function addDays(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days - 1);
+    return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+  }
+
+  function updateRowInfo(row) {
+    const gadgetSelect = row.querySelector('.gadget-select');
+    const daysInput = row.querySelector('.days-input');
+    const qtyInput = row.querySelector('.qty-input');
+    const endDateVal = row.querySelector('.end-date-info .val');
+    const availVal = row.querySelector('.availability-info .val');
+
+    const gadgetId = gadgetSelect.value;
+    const days = parseInt(daysInput.value) || 1;
+    const requestedQty = parseInt(qtyInput.value) || 1;
+
+    endDateVal.textContent = addDays(days);
+
+    if (!gadgetId) {
+      availVal.textContent = '–';
+      availVal.style.color = 'inherit';
+      return;
+    }
+
+    // Calculate total quantity for this gadget across all rows
+    let totalRequestedForThisGadget = 0;
+    document.querySelectorAll('.gadget-form-row').forEach(r => {
+      const gId = r.querySelector('.gadget-select').value;
+      const q = parseInt(r.querySelector('.qty-input').value) || 0;
+      if (gId === gadgetId) {
+        totalRequestedForThisGadget += q;
+      }
+    });
+
+    fetch(`/api/gadget/${gadgetId}/?days=${days}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.available >= totalRequestedForThisGadget) {
+          availVal.textContent = `✅ ${data.available} available`;
+          availVal.style.color = 'var(--success)';
+        } else {
+          availVal.textContent = `❌ Need ${totalRequestedForThisGadget}, only ${data.available} avail.`;
+          availVal.style.color = 'var(--danger)';
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        availVal.textContent = 'Error';
+      });
+  }
+
+  // Trigger update for ALL rows when any input changes (to refresh cross-row totals)
+  function updateAllRows() {
+    document.querySelectorAll('.gadget-form-row').forEach(row => updateRowInfo(row));
+  }
+
+  // Event delegation for inputs
+  formContainer.addEventListener('change', (e) => {
+    if (e.target.classList.contains('gadget-select') || 
+        e.target.classList.contains('days-input') || 
+        e.target.classList.contains('qty-input')) {
+      updateAllRows();
+    }
+  });
+
+  formContainer.addEventListener('input', (e) => {
+    if (e.target.classList.contains('qty-input') || e.target.classList.contains('days-input')) {
+      updateAllRows();
+    }
+  });
+
+  // Add form
+  addFormBtn.addEventListener('click', () => {
+    const formCount = parseInt(totalForms.value);
+    const newFormHtml = emptyForm.replace(/__prefix__/g, formCount);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = newFormHtml;
+    const newRow = tempDiv.firstElementChild;
+    formContainer.appendChild(newRow);
+    totalForms.value = formCount + 1;
+    
+    // Initial update for new row
+    updateAllRows();
+  });
+
+  // Remove form
+  formContainer.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-form-btn')) {
+      e.target.closest('.gadget-form-row').remove();
+      const rows = formContainer.querySelectorAll('.gadget-form-row');
+      totalForms.value = rows.length;
+      
+      // Update indices
+      rows.forEach((row, index) => {
+        row.querySelectorAll('input, select, label').forEach(el => {
+          if (el.name) el.name = el.name.replace(/form-\d+-/, `form-${index}-`);
+          if (el.id) el.id = el.id.replace(/id_form-\d+-/, `id_form-${index}-`);
+          if (el.getAttribute('for')) el.setAttribute('for', el.getAttribute('for').replace(/id_form-\d+-/, `id_form-${index}-`));
+        });
+      });
+
+      updateAllRows();
+    }
+  });
+
+  // Initial update for existing rows
+  updateAllRows();
+</script>
+{% endblock %}

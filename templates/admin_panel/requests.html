@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}All Requests – GadgetMS{% endblock %}
+{% block nav_admin_reqs %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Request Management</h1>
+  <p>Review, approve, reject, and track all student gadget requests.</p>
+</div>
+
+<!-- Filter Tabs -->
+<div class="tabs">
+  <a href="{% url 'admin_requests' %}" class="tab {% if not status_filter %}active{% endif %}">All</a>
+  <a href="?status=pending" class="tab {% if status_filter == 'pending' %}active{% endif %}">⏳ Pending</a>
+  <a href="?status=approved" class="tab {% if status_filter == 'approved' %}active{% endif %}">✅ Approved</a>
+  <a href="?status=rejected" class="tab {% if status_filter == 'rejected' %}active{% endif %}">❌ Rejected</a>
+  <a href="?status=returned" class="tab {% if status_filter == 'returned' %}active{% endif %}">🔄 Returned</a>
+</div>
+
+<div class="card">
+  {% if bookings %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student</th>
+          <th>Gadget</th>
+          <th>Duration</th>
+          <th>Dates</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ b.id }}</td>
+          <td>
+            <strong>{{ b.student.get_full_name }}</strong><br>
+            <span style="font-size:12px;color:var(--text2);">{{ b.student.student_profile.gr_number }} · {{ b.student.email }}</span>
+          </td>
+          <td><strong>{{ b.gadget.name }}</strong><br>
+            <span style="font-size:12px;color:var(--text2);">{{ b.gadget.category.name|default:"Uncategorized" }}</span>
+          </td>
+          <td>{{ b.days }} day{{ b.days|pluralize }}</td>
+          <td style="font-size:13px;">
+            {{ b.start_date|date:"d M Y" }}<br>
+            <span style="color:var(--text2);">→ {{ b.end_date|date:"d M Y" }}</span>
+            {% if b.is_overdue %}<br><span class="badge badge-overdue">OVERDUE</span>{% endif %}
+          </td>
+          <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+          <td>
+            <a href="{% url 'admin_request_detail' b.id %}" class="btn btn-ghost btn-sm" style="display:block; margin-bottom: 4px; text-align: center;">View Details</a>
+            {% if b.status == 'pending' %}
+            <!-- Approve with optional note -->
+            <form method="post" action="{% url 'admin_approve' b.id %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="admin_notes" value="Approved by admin.">
+              <button class="btn btn-success btn-sm">✅ Approve</button>
+            </form>
+            <form method="post" action="{% url 'admin_reject' b.id %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="admin_notes" value="Rejected by admin.">
+              <button class="btn btn-danger btn-sm">❌ Reject</button>
+            </form>
+            {% elif b.status == 'approved' %}
+            <form method="post" action="{% url 'admin_return' b.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button class="btn btn-warning btn-sm">🔄 Returned</button>
+            </form>
+            {% else %}
+            <span style="color:var(--text2);font-size:13px;">{{ b.get_status_display }}</span>
+            {% endif %}
+            <br style="margin-bottom:4px;">
+            {% if b.admin_notes %}
+            <span style="font-size:11px;color:var(--text2);">Note: {{ b.admin_notes }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">📋</div>
+    <p>No {{ status_filter }} requests found.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; }
+        .header { background-color: #27ae60; color: #ffffff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 20px; background-color: #ffffff; border-radius: 0 0 8px 8px; }
+        .footer { margin-top: 20px; text-align: center; font-size: 0.8em; color: #777; }
+        .details { background-color: #f1f1f1; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 3px; font-weight: bold; background-color: #27ae60; color: white; }
+        .important { color: #c0392b; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Request Approved!</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ booking.student.get_full_name }},</p>
+            <p>Great news! Your request for the gadget has been <strong style="color: #27ae60;">Approved</strong>.</p>
+            <p class="important">You can now proceed to collect the gadget from the management office.</p>
+            
+            <div class="details">
+                <h3>Approval Details:</h3>
+                <p><strong>Gadget:</strong> {{ booking.gadget.name }}</p>
+                <p><strong>Quantity:</strong> {{ booking.quantity }}</p>
+                <p><strong>Approved Days:</strong> {{ booking.days }} days</p>
+                <p><strong>Start Date:</strong> {{ booking.start_date|date:"F d, Y" }}</p>
+                <p><strong>End Date (Return By):</strong> {{ booking.end_date|date:"F d, Y" }}</p>
+                <p><strong>Approved By:</strong> Admin {{ booking.approved_by.get_full_name|default:"Administrator" }}</p>
+                <p><strong>Status:</strong> <span class="status-badge">Approved</span></p>
+            </div>
+            
+            <p>Please ensure you return the gadget on or before the return date mentioned above.</p>
+            <p>Best regards,<br>The Gadget Management Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an official automated email. Please do not reply to this message.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Manage Gadgets – GadgetMS{% endblock %}
+{% block nav_admin_gadgets %}active{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div>
+    <h1>Gadget Management</h1>
+    <p>Add, edit, and manage all gadgets in the system.</p>
+  </div>
+  <a href="{% url 'admin_gadget_add' %}" class="btn btn-primary">+ Add Gadget</a>
+</div>
+
+<div class="card">
+  {% if gadgets %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Category</th><th>Quantity</th><th>Status</th><th>Added</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for g in gadgets %}
+        <tr>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">{{ g.id }}</td>
+          <td><strong>{{ g.name }}</strong><br><span style="font-size:12px;color:var(--text2);">{{ g.description|truncatechars:40 }}</span></td>
+          <td>{{ g.category.name|default:"Uncategorized" }}</td>
+          <td><span class="qty-badge">{{ g.quantity }}</span></td>
+          <td>
+            {% if g.is_active %}
+            <span class="badge badge-approved">Active</span>
+            {% else %}
+            <span class="badge badge-rejected">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px;color:var(--text2);">{{ g.created_at|date:"d M Y" }}</td>
+          <td>
+            <a href="{% url 'admin_gadget_edit' g.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            {% if g.is_active %}
+            <form method="post" action="{% url 'admin_gadget_delete' g.id %}" style="display:inline;"
+                  onsubmit="return confirm('Deactivate {{ g.name }}?')">
+              {% csrf_token %}
+              <button class="btn btn-danger btn-sm">Deactivate</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">⚙️</div>
+    <p>No gadgets yet. <a href="{% url 'admin_gadget_add' %}" style="color:var(--accent);">Add your first gadget →</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

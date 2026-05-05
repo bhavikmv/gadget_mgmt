@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; }
+        .header { background-color: #34495e; color: #ffffff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 20px; background-color: #ffffff; border-radius: 0 0 8px 8px; }
+        .footer { margin-top: 20px; text-align: center; font-size: 0.8em; color: #777; }
+        .details { background-color: #f1f1f1; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .success-badge { display: inline-block; padding: 5px 10px; border-radius: 3px; font-weight: bold; background-color: #34495e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gadget Returned Successfully</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ booking.student.get_full_name }},</p>
+            <p>This is to confirm that you have successfully returned the gadget(s) to the management office.</p>
+            
+            <div class="details">
+                <h3>Return Confirmation:</h3>
+                <p><strong>Gadget:</strong> {{ booking.gadget.name }}</p>
+                <p><strong>Quantity:</strong> {{ booking.quantity }}</p>
+                <p><strong>Return Date:</strong> {{ booking.returned_at|date:"F d, Y H:i" }}</p>
+                <p><strong>Status:</strong> <span class="success-badge">Returned</span></p>
+            </div>
+            
+            <p>Thank you for returning the gadget on time and in good condition. You are now eligible to request other gadgets as needed.</p>
+            <p>Best regards,<br>The Gadget Management Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an official automated email. Please do not reply to this message.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – GadgetMS{% endblock %}
+{% block nav_dash %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>My Dashboard</h1>
+  <p>Welcome back, {{ user.first_name }}! Here's your gadget activity.</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card pending">
+    <div class="stat-icon">⏳</div>
+    <div class="stat-num">{{ pending.count }}</div>
+    <div class="stat-label">Pending Requests</div>
+  </div>
+  <div class="stat-card approved">
+    <div class="stat-icon">✅</div>
+    <div class="stat-num">{{ approved.count }}</div>
+    <div class="stat-label">Approved</div>
+  </div>
+  <div class="stat-card rejected">
+    <div class="stat-icon">❌</div>
+    <div class="stat-num">{{ rejected.count }}</div>
+    <div class="stat-label">Rejected</div>
+  </div>
+  <div class="stat-card returned">
+    <div class="stat-icon">🔄</div>
+    <div class="stat-num">{{ returned.count }}</div>
+    <div class="stat-label">Returned</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="flex-gap" style="margin-bottom:24px;">
+  <a href="{% url 'request_gadget' %}" class="btn btn-primary">+ New Request</a>
+  <a href="{% url 'gadgets' %}" class="btn btn-ghost">Browse Gadgets</a>
+</div>
+
+<!-- All Bookings Table -->
+<div class="card">
+  <div class="flex-between" style="margin-bottom:20px;">
+    <h2 style="font-size:16px;font-weight:700;">All My Requests</h2>
+    <span class="text-muted" style="font-size:13px;">{{ bookings.count }} total</span>
+  </div>
+
+  {% if bookings %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Gadget</th>
+          <th>Duration</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Status</th>
+          <th>Requested</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td><span style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ b.id }}</span></td>
+          <td><strong>{{ b.gadget.name }}</strong></td>
+          <td>{{ b.days }} day{{ b.days|pluralize }}</td>
+          <td>{{ b.start_date|date:"d M Y" }}</td>
+          <td>
+            {{ b.end_date|date:"d M Y" }}
+            {% if b.is_overdue %}<span class="overdue-tag">OVERDUE!</span>{% endif %}
+          </td>
+          <td>
+            <span class="badge badge-{{ b.status }}">
+              {{ b.get_status_display }}
+            </span>
+          </td>
+          <td style="color:var(--text2);font-size:13px;">{{ b.requested_at|date:"d M Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">📋</div>
+    <p>No requests yet. <a href="{% url 'request_gadget' %}" style="color:var(--accent);">Make your first request →</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
