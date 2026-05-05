@@ -62,16 +62,12 @@ WSGI_APPLICATION = 'gadget_mgmt.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'gadget_ms'),
-        'USER': os.environ.get('DB_USER', 'admin'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'adminpassword'),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        },
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'gadget_db_04pu',
+        'USER': 'gadget_db_04pu_user',
+        'PASSWORD': 'your_password_here',
+        'HOST': 'dpg-d7sqh2i8qa3s73esr14g-a',
+        'PORT': '5432',
     }
 }
 
