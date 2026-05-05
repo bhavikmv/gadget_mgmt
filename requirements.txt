@@ -11,3 +11,4 @@ django-ratelimit
 celery
 redis
 django-redis
+psycopg2-binary
