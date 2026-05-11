@@ -5,9 +5,14 @@ from django.utils.html import strip_tags
 from django.conf import settings
 from core.models import Booking
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_notification_email_task(self, booking_id, email_type):
     try:
+        logger.info(f"Starting email task for booking {booking_id}, type {email_type}")
         booking = Booking.objects.select_related('student', 'gadget', 'approved_by').get(id=booking_id)
         
         templates = {
@@ -30,6 +35,7 @@ def send_notification_email_task(self, booking_id, email_type):
         html_message = render_to_string(template_name, context)
         plain_message = strip_tags(html_message)
         
+        logger.info(f"Sending email to {booking.student.email} via {settings.EMAIL_HOST}")
         send_mail(
             subject,
             plain_message,
@@ -38,10 +44,18 @@ def send_notification_email_task(self, booking_id, email_type):
             html_message=html_message,
             fail_silently=False,
         )
+        logger.info(f"Email {email_type} sent successfully to {booking.student.email}")
         return f"Email {email_type} sent to {booking.student.email}"
 
     except Booking.DoesNotExist:
+        logger.error(f"Booking {booking_id} not found")
         return f"Booking {booking_id} not found"
     except Exception as exc:
-        # Retry for network errors
+        logger.error(f"Error sending email: {exc}")
+        # If in eager mode (synchronous), don't retry as it blocks the web worker
+        if self.request.is_eager:
+            logger.warning("Eager mode detected, skipping retry to avoid blocking.")
+            return f"Failed to send email in eager mode: {exc}"
+        
+        # Retry for network errors in background worker
         raise self.retry(exc=exc)

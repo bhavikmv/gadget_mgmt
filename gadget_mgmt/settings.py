@@ -89,9 +89,15 @@ USE_I18N = True
 USE_TZ = True
 
 # Celery Configuration
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_BROKER_URL = 'memory://'
-CELERY_RESULT_BACKEND = 'cache+memory://'
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# Run tasks asynchronously on Render, but synchronously in local development if no Redis
+CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_EAGER', 'False') == 'True'
 
 
 # Authentication Settings
