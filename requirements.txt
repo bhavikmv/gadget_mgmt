@@ -11,4 +11,3 @@ celery
 redis
 django-redis
 django-anymail[sendinblue]
-#dfnd i ioi j
