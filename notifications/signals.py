@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from core.models import Booking
+from gadgets.models import Booking
 from .tasks import send_notification_email_task
 
 @receiver(post_save, sender=Booking)

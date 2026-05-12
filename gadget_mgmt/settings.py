@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'gadgets',
-    'core',
     'notifications',
 ]
 
@@ -100,7 +99,7 @@ CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_EAGER', 'False') == 'True'
 
 
 # Authentication Settings
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'

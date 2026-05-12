@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from core.models import User, Student
+from accounts.models import User, Student
 
 
 class StudentRegistrationForm(UserCreationForm):

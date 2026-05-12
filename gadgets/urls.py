@@ -6,7 +6,19 @@ urlpatterns = [
     path('api/gadget/<int:gadget_id>/', views.gadget_detail_api, name='gadget_api'),
     
     # Student views
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('request/', views.request_gadget_view, name='request_gadget'),
     path('gadgets/', views.gadgets_view, name='gadgets'),
+    
+    # Admin Dashboard
+    path('admin-panel/', views.admin_dashboard_view, name='admin_dashboard'),
+    
+    # Admin Requests views
+    path('admin-panel/requests/', views.admin_requests_view, name='admin_requests'),
+    path('admin-panel/requests/<int:pk>/', views.admin_request_detail, name='admin_request_detail'),
+    path('admin-panel/requests/<int:pk>/approve/', views.admin_approve_request, name='admin_approve'),
+    path('admin-panel/requests/<int:pk>/reject/', views.admin_reject_request, name='admin_reject'),
+    path('admin-panel/requests/<int:pk>/return/', views.admin_mark_returned, name='admin_return'),
     
     # Admin gadget views
     path('admin-panel/gadgets/', views.admin_gadgets_view, name='admin_gadgets'),
