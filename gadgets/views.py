@@ -80,8 +80,6 @@ def request_gadget_view(request):
                                         request,
                                         f'{len(bookings_to_create)} request(s) submitted successfully!'
                                     )
-                
-                messages.success(request, f'{len(bookings_to_create)} request(s) submitted successfully!')
                 return redirect('dashboard')
             else:
                 messages.warning(request, "Please select at least one gadget.")
