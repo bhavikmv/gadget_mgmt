@@ -10,9 +10,4 @@ django-ratelimit
 celery
 redis
 django-redis
-<<<<<<< HEAD
 django-anymail[sendinblue]
-=======
-django-anymail[sendinblue]
-#dfnd i ioi j
->>>>>>> 1d2113a20cf384cd3574172691f73fc19edc6c7d
