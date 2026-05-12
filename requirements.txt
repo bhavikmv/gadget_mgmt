@@ -10,3 +10,4 @@ django-ratelimit
 celery
 redis
 django-redis
+django-anymail[sendinblue]
