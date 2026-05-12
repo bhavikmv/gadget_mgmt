@@ -35,7 +35,7 @@ def send_notification_email_task(self, booking_id, email_type):
         html_message = render_to_string(template_name, context)
         plain_message = strip_tags(html_message)
         
-        logger.info(f"Sending email to {booking.student.email} via {settings.EMAIL_HOST}")
+        logger.info(f"Sending email to {booking.student.email} via Brevo Anymail")
         send_mail(
             subject,
             plain_message,
