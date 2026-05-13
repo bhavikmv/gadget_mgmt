@@ -11,3 +11,5 @@ celery
 redis
 django-redis
 django-anymail[sendinblue]
+cloudinary
+django-cloudinary-storage
