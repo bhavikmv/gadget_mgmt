@@ -59,76 +59,41 @@
         </div>
       </div>
 
-      <hr class="divider">
+      <hr class="divider">      {{ formset.management_form }}
+      <div id="formset-container">
+        {% for form in formset %}
+        <div class="formset-row" style="margin-bottom:20px;padding:15px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
+          <div class="form-group">
+            <label class="form-label">Select Gadget *</label>
+            {{ form.gadget }}
+            {% if form.gadget.errors %}<div class="form-error">{{ form.gadget.errors.0 }}</div>{% endif %}
+          </div>
 
-      <!-- Gadget select -->
-      <div class="form-group">
-        <label class="form-label">Select Gadget *</label>
-        {{ form.gadget }}
-        {% if form.gadget.errors %}<div class="form-error">{{ form.gadget.errors.0 }}</div>{% endif %}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Duration (Days) *</label>
+              {{ form.days }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantity *</label>
+              {{ form.quantity }}
+              {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:16px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
+              {{ form.join_waitlist }}
+              <span>{{ form.join_waitlist.label }}</span>
+            </label>
+          </div>
+        </div>
+        {% endfor %}
       </div>
+      <button type="button" id="add-form" class="btn btn-ghost" style="margin-bottom:20px;">+ Add Another Gadget</button>
 
-      <!-- Duration + Quantity -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label class="form-label">Duration (Days) *</label>
-          {{ form.days }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Quantity *</label>
-          {{ form.quantity }}
-          {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
-        </div>
-      </div>
-
-      <!-- Live availability panel -->
-      <div class="avail-panel" id="avail-panel" style="display:none;">
-        <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Live Stock Info</div>
-        <div class="avail-row">
-          <span class="avail-label">Available</span>
-          <span class="avail-val" id="ap-available">–</span>
-        </div>
-        <div class="avail-row">
-          <span class="avail-label">Reserved</span>
-          <span class="avail-val" id="ap-reserved">–</span>
-        </div>
-        <div class="avail-row">
-          <span class="avail-label">Issued</span>
-          <span class="avail-val" id="ap-issued">–</span>
-        </div>
-        <div class="avail-row">
-          <span class="avail-label">Waitlist Queue</span>
-          <span class="avail-val blue" id="ap-waitlist">–</span>
-        </div>
-        <div class="avail-row">
-          <span class="avail-label">Next Available</span>
-          <span class="avail-val" id="ap-next">–</span>
-        </div>
-        <div class="avail-row">
-          <span class="avail-label">Expected Return Date</span>
-          <span class="avail-val" id="ap-enddate">–</span>
-        </div>
-        <div class="avail-row">
-          <span class="avail-label">Status</span>
-          <span class="avail-val" id="ap-status">–</span>
-        </div>
-      </div>
-
-      <!-- Waitlist warning -->
-      <div class="warn-box" id="waitlist-warn">
-        ⚠️ Stock is unavailable for your requested quantity. Check "Join Waitlist" below to reserve your spot.
-      </div>
-
-      <!-- Join waitlist checkbox -->
-      <div class="form-group" style="margin-top:16px;">
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
-          {{ form.join_waitlist }}
-          <span>{{ form.join_waitlist.label }}</span>
-        </label>
-      </div>
-
-      {% if form.non_field_errors %}
-      <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+      {% if formset.non_form_errors %}
+      <div class="alert alert-danger">{{ formset.non_form_errors.0 }}</div>
       {% endif %}
 
       <button type="submit" class="btn btn-primary" id="submit-btn"
@@ -183,68 +148,52 @@
 </div>
 
 <script>
-  const gadgetSelect = document.getElementById('gadget-select');
-  const daysSelect   = document.getElementById('days-select');
-  const qtyInput     = document.getElementById('qty-input');
-  const joinWaitlist = document.getElementById('join-waitlist');
-  const panel        = document.getElementById('avail-panel');
-  const warn         = document.getElementById('waitlist-warn');
-  const submitBtn    = document.getElementById('submit-btn');
+  const container = document.getElementById('formset-container');
+  const addBtn = document.getElementById('add-form');
+  const totalForms = document.getElementById('id_form-TOTAL_FORMS');
 
-  // Pre-select gadget if passed via query string
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      const forms = container.getElementsByClassName('formset-row');
+      const count = forms.length;
+      const newForm = forms[0].cloneNode(true);
+      
+      // Update input names and ids
+      const inputs = newForm.querySelectorAll('input, select, textarea');
+      inputs.forEach(input => {
+        const name = input.getAttribute('name');
+        if (name) {
+          input.setAttribute('name', name.replace('-0-', `-${count}-`));
+        }
+        const id = input.getAttribute('id');
+        if (id) {
+          input.setAttribute('id', id.replace('-0-', `-${count}-`));
+        }
+        // Clear values
+        if (input.type === 'checkbox') input.checked = false;
+        else if (input.tagName === 'SELECT') input.selectedIndex = 0;
+        else input.value = '';
+        
+        // Remove error messages in cloned form
+        const error = input.closest('.form-group')?.querySelector('.form-error');
+        if (error) error.remove();
+      });
+
+      container.appendChild(newForm);
+      totalForms.value = count + 1;
+    });
+  }
+
+  // Pre-select gadget if passed via query string (for the first form)
   const params = new URLSearchParams(window.location.search);
   const preGadget = params.get('gadget');
   if (preGadget) {
-    gadgetSelect.value = preGadget;
+    const firstSelect = container.querySelector('select');
+    if (firstSelect) firstSelect.value = preGadget;
   }
   if (params.get('waitlist') === '1') {
-    joinWaitlist.checked = true;
+    const firstWaitlist = container.querySelector('input[type="checkbox"]');
+    if (firstWaitlist) firstWaitlist.checked = true;
   }
-
-  function addDays(n) {
-    const d = new Date();
-    d.setDate(d.getDate() + parseInt(n) - 1);
-    return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-  }
-
-  function refreshPanel() {
-    const gId = gadgetSelect.value;
-    const days = daysSelect.value;
-    const qty  = parseInt(qtyInput.value) || 1;
-
-    // Always update end date
-    document.getElementById('ap-enddate').textContent = addDays(days);
-
-    if (!gId) { panel.style.display = 'none'; warn.style.display = 'none'; return; }
-
-    fetch(`/api/gadget/${gId}/`)
-      .then(r => r.json())
-      .then(d => {
-        panel.style.display = 'block';
-
-        const avEl = document.getElementById('ap-available');
-        avEl.textContent = `${d.available} / ${d.total_quantity}`;
-        avEl.className = 'avail-val ' + (d.available >= qty ? 'green' : 'red');
-
-        document.getElementById('ap-reserved').textContent = d.reserved;
-        document.getElementById('ap-issued').textContent   = d.issued;
-        document.getElementById('ap-waitlist').textContent = `${d.waitlist_count} student(s)`;
-        document.getElementById('ap-next').textContent     = d.next_available_date || 'Not scheduled';
-        document.getElementById('ap-status').textContent   = d.status;
-
-        const insufficient = d.available < qty;
-        warn.style.display = insufficient ? 'block' : 'none';
-        submitBtn.textContent = insufficient && joinWaitlist.checked
-          ? 'Join Waitlist' : 'Submit Request';
-      })
-      .catch(() => { panel.style.display = 'none'; });
-  }
-
-  gadgetSelect.addEventListener('change', refreshPanel);
-  daysSelect.addEventListener('change', refreshPanel);
-  qtyInput.addEventListener('input', refreshPanel);
-  joinWaitlist.addEventListener('change', refreshPanel);
-
-  refreshPanel();
 </script>
 {% endblock %}

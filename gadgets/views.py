@@ -84,84 +84,85 @@ def request_gadget_view(request):
     gadgets = Gadget.objects.filter(is_active=True).select_related('category')
 
     if request.method == 'POST':
-        form = RequestForm(request.POST)
-        if form.is_valid():
-            gadget = form.cleaned_data['gadget']
-            days = int(form.cleaned_data['days'])
-            quantity = form.cleaned_data['quantity']
-            join_waitlist = form.cleaned_data.get('join_waitlist', False)
-
-            start_date = today
-            end_date = start_date + timedelta(days=days - 1)
-
+        formset = RequestFormSet(request.POST)
+        if formset.is_valid():
+            created_request = False
+            req = None
+            
             with transaction.atomic():
-                gadget_locked = Gadget.objects.select_for_update().get(pk=gadget.pk)
+                for form in formset:
+                    if not form.cleaned_data or form.cleaned_data.get('DELETE'):
+                        continue
+                    
+                    gadget = form.cleaned_data['gadget']
+                    days = int(form.cleaned_data['days'])
+                    quantity = form.cleaned_data['quantity']
+                    join_waitlist = form.cleaned_data.get('join_waitlist', False)
 
-                if gadget_locked.available_quantity >= quantity:
-                    # Normal request flow
-                    gadget_locked.reserved_quantity += quantity
-                    gadget_locked.save(update_fields=['reserved_quantity'])
+                    start_date = today
+                    end_date = start_date + timedelta(days=days - 1)
 
-                    req = Request.objects.create(
-                        student=request.user,
-                        status='pending',
-                        expected_issue_date=start_date,
-                        expected_return_date=end_date,
-                    )
-                    RequestItem.objects.create(request=req, gadget=gadget_locked, quantity=quantity)
-                    messages.success(
-                        request,
-                        f'✅ Request submitted for {quantity}× {gadget_locked.name}. '
-                        f'Expected return by {end_date.strftime("%d %b %Y")}.'
-                    )
+                    gadget_locked = Gadget.objects.select_for_update().get(pk=gadget.pk)
 
-                elif join_waitlist:
-                    # Check duplicate
-                    if WaitingQueue.objects.filter(student=request.user, gadget=gadget_locked).exists():
+                    if gadget_locked.available_quantity >= quantity:
+                        # Normal request flow
+                        if not created_request:
+                            req = Request.objects.create(
+                                student=request.user,
+                                status='pending',
+                                expected_issue_date=start_date,
+                                expected_return_date=end_date,
+                            )
+                            created_request = True
+                        else:
+                            if end_date > req.expected_return_date:
+                                req.expected_return_date = end_date
+                                req.save(update_fields=['expected_return_date'])
+
+                        gadget_locked.reserved_quantity += quantity
+                        gadget_locked.save(update_fields=['reserved_quantity'])
+                        RequestItem.objects.create(request=req, gadget=gadget_locked, quantity=quantity)
+                        messages.success(request, f'✅ Added {quantity}× {gadget_locked.name} to request.')
+
+                    elif join_waitlist:
+                        # Check duplicate
+                        if WaitingQueue.objects.filter(student=request.user, gadget=gadget_locked).exists():
+                            messages.warning(request, f'You are already in the waitlist for {gadget_locked.name}.')
+                        else:
+                            wq = WaitingQueue.objects.create(
+                                student=request.user,
+                                gadget=gadget_locked,
+                                quantity=quantity,
+                                duration_days=days,
+                            )
+                            # Estimate date for this queue position
+                            est = calculate_queue_estimated_date(gadget_locked, quantity, wq.queue_position)
+                            if est:
+                                wq.estimated_availability_date = est
+                                wq.save(update_fields=['estimated_availability_date'])
+
+                            messages.info(
+                                request,
+                                f'📋 Added to waitlist for {gadget_locked.name}. '
+                                f'Queue position: #{wq.queue_position}.'
+                            )
+                    else:
+                        next_date = calculate_next_available_date(gadget_locked)
+                        next_str = next_date.strftime('%d %b %Y') if next_date else 'Unknown'
                         messages.warning(
                             request,
-                            f'You are already in the waitlist for {gadget_locked.name}.'
+                            f'⚠️ Only {gadget_locked.available_quantity} of {gadget_locked.name} available. '
+                            f'Next available: {next_str}.'
                         )
-                    else:
-                        wq = WaitingQueue.objects.create(
-                            student=request.user,
-                            gadget=gadget_locked,
-                            quantity=quantity,
-                            duration_days=days,
-                        )
-                        # Estimate date for this queue position
-                        est = calculate_queue_estimated_date(gadget_locked, quantity, wq.queue_position)
-                        if est:
-                            wq.estimated_availability_date = est
-                            wq.save(update_fields=['estimated_availability_date'])
-
-                        messages.info(
-                            request,
-                            f'📋 Added to waitlist for {gadget_locked.name}. '
-                            f'Queue position: #{wq.queue_position}.'
-                            + (f' Estimated availability: {est.strftime("%d %b %Y")}.' if est else '')
-                        )
-                else:
-                    next_date = calculate_next_available_date(gadget_locked)
-                    next_str = next_date.strftime('%d %b %Y') if next_date else 'Unknown'
-                    messages.warning(
-                        request,
-                        f'⚠️ Only {gadget_locked.available_quantity} of {gadget_locked.name} available '
-                        f'(you need {quantity}). Next available: {next_str}. '
-                        f'Check "Join Waitlist" to reserve your spot.'
-                    )
-                    return render(request, 'student/request.html', {
-                        'form': form, 'gadgets': gadgets, 'today': today
-                    })
 
             return redirect('dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = RequestForm()
+        formset = RequestFormSet()
 
     return render(request, 'student/request.html', {
-        'form': form,
+        'formset': formset,
         'gadgets': gadgets,
         'today': today,
     })

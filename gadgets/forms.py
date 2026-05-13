@@ -62,6 +62,16 @@ class RequestForm(forms.Form):
                 )
         return cleaned
 
+from django.forms import formset_factory, BaseFormSet
+
+class BaseRequestFormSet(BaseFormSet):
+    def clean(self):
+        if any(self.errors):
+            return
+
+RequestFormSet = formset_factory(RequestForm, formset=BaseRequestFormSet, extra=1)
+
+
 
 class WaitlistForm(forms.Form):
     """Minimal form for joining a waitlist directly from the gadget card."""
