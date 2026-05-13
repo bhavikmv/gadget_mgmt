@@ -4,12 +4,14 @@
 
 {% block content %}
 <style>
-  .badge-pending { background-color: #ffc107; color: #000; }
-  .badge-approved { background-color: #fd7e14; color: #fff; }
-  .badge-ready { background-color: #0d6efd; color: #fff; }
-  .badge-issued { background-color: #198754; color: #fff; }
-  .badge-rejected { background-color: #dc3545; color: #fff; }
-  .badge-returned { background-color: #6c757d; color: #fff; }
+  .badge-pending    { background:#78350f;color:#fef08a; }
+  .badge-waitlisted { background:#4c1d95;color:#ddd6fe; }
+  .badge-approved   { background:#7c3aed;color:#fff; }
+  .badge-ready      { background:#1e40af;color:#bfdbfe; }
+  .badge-issued     { background:#065f46;color:#a7f3d0; }
+  .badge-rejected   { background:#7f1d1d;color:#fecaca; }
+  .badge-returned   { background:#374151;color:#d1d5db; }
+  .overdue-tag { background:#7f1d1d;color:#fca5a5;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;margin-left:4px; }
 </style>
 
 <div class="page-header">
@@ -18,14 +20,15 @@
 </div>
 
 <!-- Filter Tabs -->
-<div class="tabs">
+<div class="tabs" style="margin-bottom:20px;flex-wrap:wrap;gap:6px;">
   <a href="{% url 'admin_requests' %}" class="tab {% if not status_filter %}active{% endif %}">All</a>
-  <a href="?status=pending" class="tab {% if status_filter == 'pending' %}active{% endif %}">⏳ Pending</a>
-  <a href="?status=approved" class="tab {% if status_filter == 'approved' %}active{% endif %}">🕒 Approved</a>
-  <a href="?status=ready" class="tab {% if status_filter == 'ready' %}active{% endif %}">📦 Ready</a>
-  <a href="?status=issued" class="tab {% if status_filter == 'issued' %}active{% endif %}">✅ Issued</a>
-  <a href="?status=rejected" class="tab {% if status_filter == 'rejected' %}active{% endif %}">❌ Rejected</a>
-  <a href="?status=returned" class="tab {% if status_filter == 'returned' %}active{% endif %}">🔄 Returned</a>
+  <a href="?status=pending"    class="tab {% if status_filter == 'pending' %}active{% endif %}">⏳ Pending</a>
+  <a href="?status=waitlisted" class="tab {% if status_filter == 'waitlisted' %}active{% endif %}">📋 Waitlisted</a>
+  <a href="?status=approved"   class="tab {% if status_filter == 'approved' %}active{% endif %}">🕒 Approved</a>
+  <a href="?status=ready"      class="tab {% if status_filter == 'ready' %}active{% endif %}">📦 Ready</a>
+  <a href="?status=issued"     class="tab {% if status_filter == 'issued' %}active{% endif %}">✅ Issued</a>
+  <a href="?status=rejected"   class="tab {% if status_filter == 'rejected' %}active{% endif %}">❌ Rejected</a>
+  <a href="?status=returned"   class="tab {% if status_filter == 'returned' %}active{% endif %}">🔄 Returned</a>
 </div>
 
 <div class="card">
@@ -37,7 +40,7 @@
           <th class="hide-on-mobile">#</th>
           <th>Student</th>
           <th>Items</th>
-          <th class="hide-on-mobile">Requested</th>
+          <th class="hide-on-mobile">Requested On</th>
           <th class="hide-on-mobile">Expected Dates</th>
           <th class="hide-on-mobile">Actual Dates</th>
           <th>Status</th>
@@ -54,22 +57,25 @@
           </td>
           <td>
             {% for item in r.items.all %}
-              <div style="font-size: 13px;">{{ item.quantity }}x {{ item.gadget.name }}</div>
+              <div style="font-size:13px;">{{ item.quantity }}× {{ item.gadget.name }}</div>
             {% endfor %}
           </td>
-          <td class="hide-on-mobile" style="color:var(--text2);font-size:13px;">{{ r.created_at|date:"d M Y" }}</td>
-          <td class="hide-on-mobile" style="font-size:13px;">
-            {{ r.expected_issue_date|date:"d M Y"|default:"-" }}<br>
-            <span style="color:var(--text2);">→ {{ r.expected_return_date|date:"d M Y" }}</span>
+          <td class="hide-on-mobile" style="font-size:12px;color:var(--text2);">{{ r.created_at|date:"d M Y" }}</td>
+          <td class="hide-on-mobile" style="font-size:12px;">
+            <span style="color:var(--text2);">Issue:</span> {{ r.expected_issue_date|date:"d M Y"|default:"–" }}<br>
+            <span style="color:var(--text2);">Return:</span> {{ r.expected_return_date|date:"d M Y"|default:"–" }}
           </td>
-          <td class="hide-on-mobile" style="font-size:13px;">
-            {% if r.issue_date %}<span style="color:var(--success);">{{ r.issue_date|date:"d M Y" }}</span>{% else %}-{% endif %}<br>
-            <span style="color:var(--text2);">→ {% if r.return_date %}<span style="color:var(--warning);">{{ r.return_date|date:"d M Y" }}</span>{% else %}-{% endif %}</span>
+          <td class="hide-on-mobile" style="font-size:12px;">
+            {% if r.issue_date %}<span style="color:#4ade80;">{{ r.issue_date|date:"d M Y" }}</span>{% else %}<span style="color:var(--text2);">–</span>{% endif %}<br>
+            {% if r.return_date %}<span style="color:#facc15;">{{ r.return_date|date:"d M Y" }}</span>{% else %}<span style="color:var(--text2);">–</span>{% endif %}
           </td>
-          <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
           <td>
-            <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm" style="display:block; margin-bottom: 4px; text-align: center;">View Details</a>
-            
+            <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+            {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm"
+               style="display:block;margin-bottom:4px;text-align:center;">View Details</a>
             {% if r.status == 'pending' %}
             <form method="post" action="{% url 'admin_approve' r.id %}" style="display:inline;">
               {% csrf_token %}
@@ -81,30 +87,21 @@
             </form>
             {% elif r.status == 'approved' %}
             <form method="post" action="{% url 'admin_mark_ready' r.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button class="btn btn-primary btn-sm">📦 Mark Ready</button>
+              {% csrf_token %}<button class="btn btn-primary btn-sm">📦 Mark Ready</button>
             </form>
             <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button class="btn btn-success btn-sm">✅ Issue</button>
+              {% csrf_token %}<button class="btn btn-success btn-sm">✅ Issue</button>
             </form>
             {% elif r.status == 'ready' %}
             <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button class="btn btn-success btn-sm">✅ Issue</button>
+              {% csrf_token %}<button class="btn btn-success btn-sm">✅ Issue</button>
             </form>
             {% elif r.status == 'issued' %}
             <form method="post" action="{% url 'admin_return' r.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button class="btn btn-warning btn-sm">🔄 Returned</button>
+              {% csrf_token %}<button class="btn btn-warning btn-sm">🔄 Returned</button>
             </form>
             {% else %}
-            <span style="color:var(--text2);font-size:13px;">{{ r.get_status_display }}</span>
-            {% endif %}
-            
-            <br style="margin-bottom:4px;">
-            {% if r.admin_notes %}
-            <span style="font-size:11px;color:var(--text2);">Note: {{ r.admin_notes }}</span>
+            <span style="color:var(--text2);font-size:12px;">{{ r.get_status_display }}</span>
             {% endif %}
           </td>
         </tr>

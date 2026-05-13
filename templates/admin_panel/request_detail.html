@@ -1,141 +1,219 @@
 {% extends 'base.html' %}
-{% block title %}Request Details #{{ request.id }} – GadgetMS{% endblock %}
+{% block title %}Request #{{ req.id }} – GadgetMS{% endblock %}
 {% block nav_admin_reqs %}active{% endblock %}
 
 {% block content %}
+<style>
+  .badge-pending    { background:#78350f;color:#fef08a; }
+  .badge-waitlisted { background:#4c1d95;color:#ddd6fe; }
+  .badge-approved   { background:#7c3aed;color:#fff; }
+  .badge-ready      { background:#1e40af;color:#bfdbfe; }
+  .badge-issued     { background:#065f46;color:#a7f3d0; }
+  .badge-rejected   { background:#7f1d1d;color:#fecaca; }
+  .badge-returned   { background:#374151;color:#d1d5db; }
+
+  .dates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-top: 24px;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .date-cell .dl { font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;margin-bottom:4px; }
+  .date-cell .dv { font-size:14px;font-weight:600; }
+  .date-cell .dv.green  { color:#4ade80; }
+  .date-cell .dv.yellow { color:#facc15; }
+  .date-cell .dv.blue   { color:#60a5fa; }
+  .date-cell .dv.gray   { color:var(--text2); }
+
+  .info-row { display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px; }
+  .info-row:last-child { border-bottom:none; }
+  .info-row .lbl { color:var(--text2); }
+
+  .action-form { display:flex;flex-direction:column;gap:12px; }
+  .overdue-alert {
+    background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+    border-radius:8px;padding:12px 16px;color:#f87171;font-size:13px;margin-bottom:12px;
+  }
+</style>
+
 <div class="page-header">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-    <a href="{% url 'admin_requests' %}" class="btn btn-ghost" style="padding:4px 8px;">← Back</a>
-    <span style="color:var(--text2);">Request Management / #{{ request.id }}</span>
+    <a href="{% url 'admin_requests' %}" class="btn btn-ghost" style="padding:4px 10px;">← Back</a>
+    <span style="color:var(--text2);">Request Management / #{{ req.id }}</span>
   </div>
   <h1>Request Details</h1>
 </div>
 
 <div class="responsive-grid-2-1">
-  
-  <div style="display:flex;flex-direction:column;gap:24px;">
-    
-    <!-- MAIN INFO CARD -->
+
+  <!-- LEFT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <!-- Main Info -->
     <div class="card">
-      <div class="flex-between" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+      <div class="flex-between" style="margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);">
         <h2 style="font-size:18px;font-weight:700;">General Information</h2>
-        <span class="badge badge-{{ request.status }}" style="font-size:14px;padding:6px 12px;">{{ request.get_status_display|upper }}</span>
+        <span class="badge badge-{{ req.status }}" style="font-size:14px;padding:6px 14px;">
+          {{ req.get_status_display|upper }}
+        </span>
       </div>
 
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text2);">Requested Items</h3>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        {% for item in request.items.all %}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;">
-          <div>
-            <div style="font-weight:700;font-size:16px;">{{ item.gadget.name }}</div>
-            <div style="color:var(--text2);font-size:13px;">{{ item.gadget.category.name|default:"Uncategorized" }}</div>
+      {% if req.is_overdue %}
+      <div class="overdue-alert">⚠️ This request is <strong>overdue</strong>! Expected return was {{ req.expected_return_date|date:"d M Y" }}.</div>
+      {% endif %}
+
+      <!-- Items -->
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Requested Items</h3>
+      {% for item in req.items.all %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700;font-size:16px;">{{ item.gadget.name }}</div>
+          <div style="color:var(--text2);font-size:13px;">{{ item.gadget.category.name|default:"Uncategorized" }}</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text2);">
+            Total stock: {{ item.gadget.total_quantity }} |
+            Available: {{ item.gadget.available_quantity }} |
+            Reserved: {{ item.gadget.reserved_quantity }} |
+            Issued: {{ item.gadget.issued_quantity }}
           </div>
-          <div style="font-size:18px;font-weight:700;">{{ item.quantity }}x</div>
         </div>
-        {% endfor %}
+        <div style="font-size:22px;font-weight:800;">{{ item.quantity }}×</div>
       </div>
+      {% endfor %}
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:24px;margin-top:32px;background:rgba(255,255,255,0.02);padding:20px;border-radius:8px;border:1px solid var(--border);">
-        <div>
-          <label class="form-label" style="opacity:0.6;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Requested On</label>
-          <div style="font-weight:600;margin-top:4px;font-size:14px;">{{ request.created_at|date:"d M Y" }}</div>
+      <!-- Dates panel -->
+      <div class="dates-grid">
+        <div class="date-cell">
+          <div class="dl">Requested On</div>
+          <div class="dv gray">{{ req.created_at|date:"d M Y" }}</div>
         </div>
-        <div>
-          <label class="form-label" style="opacity:0.6;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Expected Issue</label>
-          <div style="font-weight:600;margin-top:4px;font-size:14px;">{{ request.expected_issue_date|date:"d M Y"|default:"Not specified" }}</div>
+        <div class="date-cell">
+          <div class="dl">Expected Issue</div>
+          <div class="dv">{{ req.expected_issue_date|date:"d M Y"|default:"–" }}</div>
         </div>
-        <div>
-          <label class="form-label" style="opacity:0.6;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Expected Return</label>
-          <div style="font-weight:600;margin-top:4px;font-size:14px;">{{ request.expected_return_date|date:"d M Y" }}</div>
+        <div class="date-cell">
+          <div class="dl">Expected Return</div>
+          <div class="dv blue">{{ req.expected_return_date|date:"d M Y"|default:"–" }}</div>
         </div>
-        {% if request.issue_date %}
-        <div>
-          <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--success);">Actual Issue</label>
-          <div style="font-weight:600;margin-top:4px;font-size:14px;color:var(--success);">{{ request.issue_date|date:"d M Y" }}</div>
+        {% if req.issue_date %}
+        <div class="date-cell">
+          <div class="dl">Actual Issue</div>
+          <div class="dv green">{{ req.issue_date|date:"d M Y" }}</div>
         </div>
         {% endif %}
-        {% if request.return_date %}
-        <div>
-          <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--warning);">Actual Return</label>
-          <div style="font-weight:600;margin-top:4px;font-size:14px;color:var(--warning);">{{ request.return_date|date:"d M Y" }}</div>
+        {% if req.return_date %}
+        <div class="date-cell">
+          <div class="dl">Actual Return</div>
+          <div class="dv yellow">{{ req.return_date|date:"d M Y" }}</div>
         </div>
         {% endif %}
       </div>
 
-      {% if request.admin_notes %}
-      <div style="margin-top:32px;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:4px solid var(--accent);">
-        <label class="form-label" style="opacity:0.6;font-size:12px;margin-bottom:8px;display:block;">Admin Notes</label>
-        <p style="font-size:14px;line-height:1.6;margin:0;">{{ request.admin_notes }}</p>
+      {% if req.admin_notes %}
+      <div style="margin-top:20px;padding:14px;background:rgba(255,255,255,0.03);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;margin-bottom:6px;">Admin Notes</div>
+        <p style="font-size:14px;line-height:1.6;margin:0;">{{ req.admin_notes }}</p>
       </div>
       {% endif %}
     </div>
 
-    <!-- ACTION CARD -->
-    {% if request.status == 'pending' %}
-    <div class="card" style="border: 1px solid var(--accent);">
+    <!-- Action Card -->
+    {% if req.status == 'pending' %}
+    <div class="card" style="border:1px solid rgba(251,191,36,0.3);">
       <h3 style="margin-bottom:16px;">Decision Actions</h3>
-      <form method="post" style="display:flex;flex-direction:column;gap:16px;">
+      <form method="post" class="action-form">
         {% csrf_token %}
         <div class="form-group">
           <label class="form-label">Review Notes (Optional)</label>
-          <textarea name="admin_notes" class="form-control" rows="3" placeholder="Add a note for the student..."></textarea>
+          <textarea name="admin_notes" class="form-control" rows="3" placeholder="Add a note for the student…"></textarea>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <button type="submit" formaction="{% url 'admin_approve' request.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">Approve Request</button>
-          <button type="submit" formaction="{% url 'admin_reject' request.id %}" class="btn btn-danger" style="justify-content:center;padding:12px;">Reject Request</button>
+          <button formaction="{% url 'admin_approve' req.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">✅ Approve</button>
+          <button formaction="{% url 'admin_reject' req.id %}"  class="btn btn-danger"  style="justify-content:center;padding:12px;">❌ Reject</button>
         </div>
       </form>
     </div>
-    {% elif request.status == 'approved' %}
-    <div class="card" style="border: 1px solid var(--warning);">
+
+    {% elif req.status == 'approved' %}
+    <div class="card" style="border:1px solid rgba(99,102,241,0.3);">
       <h3 style="margin-bottom:16px;">Next Action</h3>
-      <p style="color:var(--text2);margin-bottom:16px;">The request is approved. You can mark it as ready for pickup or issue it directly.</p>
-      <form method="post" style="display:flex;flex-direction:column;gap:12px;">
+      <p style="color:var(--text2);margin-bottom:16px;font-size:14px;">Request approved. Mark ready for pickup or issue directly.</p>
+      <form method="post" class="action-form">
         {% csrf_token %}
-        <button type="submit" formaction="{% url 'admin_mark_ready' request.id %}" class="btn btn-primary" style="justify-content:center;padding:12px;">Mark as Ready for Pickup</button>
-        <button type="submit" formaction="{% url 'admin_issue' request.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">Issue to Student</button>
+        <div class="form-group">
+          <label class="form-label">Override Expected Return Date (Optional)</label>
+          <input type="date" name="expected_return_date" class="form-control"
+                 value="{{ req.expected_return_date|date:'Y-m-d' }}" min="{{ today|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Admin Notes</label>
+          <textarea name="admin_notes" class="form-control" rows="2">{{ req.admin_notes }}</textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <button formaction="{% url 'admin_mark_ready' req.id %}" class="btn btn-primary" style="justify-content:center;padding:12px;">📦 Mark Ready</button>
+          <button formaction="{% url 'admin_issue' req.id %}"      class="btn btn-success" style="justify-content:center;padding:12px;">✅ Issue Now</button>
+        </div>
       </form>
     </div>
-    {% elif request.status == 'ready' %}
-    <div class="card" style="border: 1px solid var(--success);">
-      <h3 style="margin-bottom:16px;">Next Action</h3>
-      <p style="color:var(--text2);margin-bottom:16px;">The gadget is ready. Hand it over to the student and click Issue.</p>
-      <form method="post" action="{% url 'admin_issue' request.id %}">
+
+    {% elif req.status == 'ready' %}
+    <div class="card" style="border:1px solid rgba(16,185,129,0.3);">
+      <h3 style="margin-bottom:16px;">Issue Gadget</h3>
+      <p style="color:var(--text2);margin-bottom:16px;font-size:14px;">Hand over the gadget to the student and click Issue.</p>
+      <form method="post" action="{% url 'admin_issue' req.id %}" class="action-form">
         {% csrf_token %}
-        <button type="submit" class="btn btn-success" style="width:100%;justify-content:center;padding:12px;">Issue to Student</button>
+        <div class="form-group">
+          <label class="form-label">Override Expected Return Date (Optional)</label>
+          <input type="date" name="expected_return_date" class="form-control"
+                 value="{{ req.expected_return_date|date:'Y-m-d' }}">
+        </div>
+        <button type="submit" class="btn btn-success" style="width:100%;justify-content:center;padding:12px;">✅ Issue to Student</button>
       </form>
     </div>
-    {% elif request.status == 'issued' %}
-    <div class="card" style="border: 1px solid var(--warning);">
+
+    {% elif req.status == 'issued' %}
+    <div class="card" style="border:1px solid rgba(251,191,36,0.3);">
       <h3 style="margin-bottom:16px;">Return Action</h3>
-      <p style="color:var(--text2);margin-bottom:16px;">Mark this gadget as returned once the student hands it back to the IT lab.</p>
-      <form method="post" action="{% url 'admin_return' request.id %}">
+      <p style="color:var(--text2);margin-bottom:16px;font-size:14px;">Mark this gadget as returned once the student hands it back.</p>
+      <form method="post" action="{% url 'admin_return' req.id %}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-warning" style="width:100%;justify-content:center;padding:12px;">Mark as Returned</button>
+        <button type="submit" class="btn btn-warning" style="width:100%;justify-content:center;padding:12px;">🔄 Mark as Returned</button>
       </form>
     </div>
     {% endif %}
 
   </div>
 
-  <div style="display:flex;flex-direction:column;gap:24px;">
-    
-    <!-- STUDENT CARD -->
+  <!-- RIGHT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <!-- Student Card -->
     <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Student Details</h3>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <div style="width:48px;height:48px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:white;">
-          {{ request.student.first_name|first }}{{ request.student.last_name|first }}
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Student Details</h3>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:50px;height:50px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:white;">
+          {{ req.student.first_name|first }}{{ req.student.last_name|first }}
         </div>
         <div>
-          <div style="font-weight:700;font-size:16px;">{{ request.student.get_full_name }}</div>
-          <div style="font-size:13px;color:var(--text2);">{{ request.student.email }}</div>
+          <div style="font-weight:700;font-size:16px;">{{ req.student.get_full_name }}</div>
+          <div style="font-size:13px;color:var(--text2);">{{ req.student.email }}</div>
         </div>
       </div>
-      <div class="info-row"><span>GR Number</span><span style="font-weight:600;">{{ request.student.student_profile.gr_number }}</span></div>
-      <div class="info-row"><span>Phone</span><span>{{ request.student.student_profile.phone|default:"–" }}</span></div>
+      <div class="info-row"><span class="lbl">GR Number</span><strong>{{ req.student.student_profile.gr_number }}</strong></div>
+      <div class="info-row"><span class="lbl">Phone</span><span>{{ req.student.student_profile.phone|default:"–" }}</span></div>
     </div>
-  </div>
 
+    <!-- Timeline Card -->
+    <div class="card">
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Request Timeline</h3>
+      <div class="info-row"><span class="lbl">Created</span><span>{{ req.created_at|date:"d M Y, H:i" }}</span></div>
+      <div class="info-row"><span class="lbl">Last Updated</span><span>{{ req.updated_at|date:"d M Y, H:i" }}</span></div>
+      <div class="info-row"><span class="lbl">Status</span><span class="badge badge-{{ req.status }}">{{ req.get_status_display }}</span></div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

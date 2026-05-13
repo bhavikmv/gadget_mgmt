@@ -3,255 +3,248 @@
 {% block nav_request %}active{% endblock %}
 
 {% block content %}
+<style>
+  .avail-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  .avail-row { display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .avail-row:last-child { border-bottom: none; }
+  .avail-label { color: var(--text2); }
+  .avail-val   { font-weight: 600; }
+  .avail-val.green  { color: #4ade80; }
+  .avail-val.yellow { color: #facc15; }
+  .avail-val.red    { color: #f87171; }
+  .avail-val.blue   { color: #60a5fa; }
+
+  .warn-box {
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #fbbf24;
+    margin-top: 12px; display: none;
+  }
+</style>
+
 <div class="page-header">
   <h1>New Gadget Request</h1>
-  <p>Fill in the form below to request a gadget.</p>
+  <p>Select a gadget, duration, and quantity. Real-time availability is shown below.</p>
 </div>
 
-<div class="grid-2-1 responsive-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start;">
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start;">
 
-  <!-- REQUEST FORM -->
+  <!-- FORM CARD -->
   <div class="card">
-    <div style="background: #ff4d4d; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: 700; text-align: center;">
-      MULTI-GADGET FORM ACTIVE
-    </div>
     <h2 style="font-size:16px;font-weight:700;margin-bottom:20px;">Request Details</h2>
     <form method="post" id="request-form">
       {% csrf_token %}
-      {{ formset.management_form }}
 
-      <!-- Student Info (auto-filled, read-only) -->
+      <!-- Read-only student info -->
       <div class="form-group">
-        <label class="form-label">Student Name</label>
-        <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly style="opacity:0.6;cursor:not-allowed;">
+        <label class="form-label">Student</label>
+        <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly style="opacity:0.6;">
       </div>
-      <div class="responsive-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
           <label class="form-label">GR Number</label>
-          <input type="text" class="form-control" value="{{ user.student_profile.gr_number }}" readonly style="opacity:0.6;cursor:not-allowed;">
+          <input type="text" class="form-control" value="{{ user.student_profile.gr_number }}" readonly style="opacity:0.6;">
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input type="text" class="form-control" value="{{ user.email }}" readonly style="opacity:0.6;cursor:not-allowed;">
+          <input type="text" class="form-control" value="{{ user.email }}" readonly style="opacity:0.6;">
         </div>
       </div>
 
       <hr class="divider">
 
-      <div id="form-container">
-        {% for form in formset %}
-        <div class="gadget-form-row card" style="background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 15px; position: relative;">
-          {% if not forloop.first %}
-          <button type="button" class="remove-form-btn" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 20px;">&times;</button>
-          {% endif %}
-          
-          {% if form.non_field_errors %}
-            <div class="alert alert-danger" style="font-size: 12px; margin-bottom: 10px; padding: 8px;">{{ form.non_field_errors.0 }}</div>
-          {% endif %}
-          
-          <div class="form-group">
-            <label class="form-label">Select Gadget</label>
-            {{ form.gadget }}
-            {% if form.gadget.errors %}<div class="form-error">{{ form.gadget.errors.0 }}</div>{% endif %}
-          </div>
-
-          <div class="responsive-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group">
-              <label class="form-label">Duration (Days)</label>
-              {{ form.days }}
-              {% if form.days.errors %}<div class="form-error">{{ form.days.errors.0 }}</div>{% endif %}
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Quantity</label>
-              {{ form.quantity }}
-              {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
-            </div>
-          </div>
-          
-          <div class="form-group" style="margin-top: 10px;">
-            <label style="display:flex; align-items:center; gap: 8px; font-size: 13px;">
-              {{ form.join_waitlist }} <span>{{ form.join_waitlist.label }}</span>
-            </label>
-          </div>
-
-          <div class="row-info" style="font-size: 12px; color: var(--text2); display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
-            <span class="end-date-info">End Date: <span class="val" style="font-weight:bold;">–</span></span>
-            <span class="availability-info">Availability: <span class="val" style="font-weight:bold;">–</span></span>
-          </div>
-        </div>
-        {% endfor %}
+      <!-- Gadget select -->
+      <div class="form-group">
+        <label class="form-label">Select Gadget *</label>
+        {{ form.gadget }}
+        {% if form.gadget.errors %}<div class="form-error">{{ form.gadget.errors.0 }}</div>{% endif %}
       </div>
 
-      <button type="button" id="add-form-btn" class="btn" style="width:100%; margin-bottom: 20px; background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.3); color: var(--text);">
-        + Add Another Gadget
-      </button>
+      <!-- Duration + Quantity -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Duration (Days) *</label>
+          {{ form.days }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity *</label>
+          {{ form.quantity }}
+          {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
 
-      {% if formset.non_form_errors %}
-        <div class="alert alert-danger" style="margin-bottom:16px;">{{ formset.non_form_errors.0 }}</div>
+      <!-- Live availability panel -->
+      <div class="avail-panel" id="avail-panel" style="display:none;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Live Stock Info</div>
+        <div class="avail-row">
+          <span class="avail-label">Available</span>
+          <span class="avail-val" id="ap-available">–</span>
+        </div>
+        <div class="avail-row">
+          <span class="avail-label">Reserved</span>
+          <span class="avail-val" id="ap-reserved">–</span>
+        </div>
+        <div class="avail-row">
+          <span class="avail-label">Issued</span>
+          <span class="avail-val" id="ap-issued">–</span>
+        </div>
+        <div class="avail-row">
+          <span class="avail-label">Waitlist Queue</span>
+          <span class="avail-val blue" id="ap-waitlist">–</span>
+        </div>
+        <div class="avail-row">
+          <span class="avail-label">Next Available</span>
+          <span class="avail-val" id="ap-next">–</span>
+        </div>
+        <div class="avail-row">
+          <span class="avail-label">Expected Return Date</span>
+          <span class="avail-val" id="ap-enddate">–</span>
+        </div>
+        <div class="avail-row">
+          <span class="avail-label">Status</span>
+          <span class="avail-val" id="ap-status">–</span>
+        </div>
+      </div>
+
+      <!-- Waitlist warning -->
+      <div class="warn-box" id="waitlist-warn">
+        ⚠️ Stock is unavailable for your requested quantity. Check "Join Waitlist" below to reserve your spot.
+      </div>
+
+      <!-- Join waitlist checkbox -->
+      <div class="form-group" style="margin-top:16px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
+          {{ form.join_waitlist }}
+          <span>{{ form.join_waitlist.label }}</span>
+        </label>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
       {% endif %}
 
-      <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%;justify-content:center;padding:13px;">
-        Submit All Requests
+      <button type="submit" class="btn btn-primary" id="submit-btn"
+              style="width:100%;justify-content:center;padding:13px;margin-top:16px;">
+        Submit Request
       </button>
     </form>
   </div>
 
-  <!-- GADGET INFO PANEL -->
-  <div>
+  <!-- RIGHT PANEL -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
     <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📌 Request Rules</h3>
-      <ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2;">
-        <li>✅ Maximum booking duration: <strong style="color:var(--text)">15 days</strong></li>
-        <li>✅ Stock is checked in real-time.</li>
-        <li>✅ If unavailable, select <strong>Join waitlist</strong> to reserve it in advance.</li>
-        <li>✅ Requests are reviewed by admin.</li>
-        <li>⚠️ Return gadget on or before the end date.</li>
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📋 Request Rules</h3>
+      <ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2;">
+        <li>✅ Max duration: <strong style="color:var(--text)">30 days</strong></li>
+        <li>✅ Stock checked in real-time</li>
+        <li>✅ Join waitlist if out of stock</li>
+        <li>✅ All requests reviewed by admin</li>
+        <li>⚠️ Return on or before the end date</li>
+        <li>📋 <strong>Approved ≠ Issued</strong></li>
       </ul>
     </div>
-  </div>
 
-</div>
-
-<!-- Template for new forms -->
-<div id="empty-form" style="display:none;">
-  <div class="gadget-form-row card" style="background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 15px; position: relative;">
-    <button type="button" class="remove-form-btn" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 20px;">&times;</button>
-    
-    <div class="form-group">
-      <label class="form-label">Select Gadget</label>
-      {{ formset.empty_form.gadget }}
-    </div>
-
-    <div class="responsive-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group">
-        <label class="form-label">Duration (Days)</label>
-        {{ formset.empty_form.days }}
+    <div class="card" style="font-size:13px;">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📊 Status Guide</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-pending" style="font-size:11px;">Pending Review</span>
+          <span style="color:var(--text2);">Awaiting admin action</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge" style="background:#7c3aed;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;">Waiting List</span>
+          <span style="color:var(--text2);">In queue for stock</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-approved" style="font-size:11px;">Approved</span>
+          <span style="color:var(--text2);">Permission granted</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-ready" style="font-size:11px;">Ready for Pickup</span>
+          <span style="color:var(--text2);">Come collect it</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-issued" style="font-size:11px;">Issued</span>
+          <span style="color:var(--text2);">Physically in your hands</span>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label class="form-label">Quantity</label>
-        {{ formset.empty_form.quantity }}
-      </div>
-    </div>
-    
-    <div class="form-group" style="margin-top: 10px;">
-      <label style="display:flex; align-items:center; gap: 8px; font-size: 13px;">
-        {{ formset.empty_form.join_waitlist }} <span>Join waitlist if stock is unavailable</span>
-      </label>
     </div>
 
-    <div class="row-info" style="font-size: 12px; color: var(--text2); display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
-      <span class="end-date-info">End Date: <span class="val" style="font-weight:bold;">–</span></span>
-      <span class="availability-info">Availability: <span class="val" style="font-weight:bold;">–</span></span>
-    </div>
   </div>
 </div>
 
 <script>
-  const formContainer = document.getElementById('form-container');
-  const addFormBtn = document.getElementById('add-form-btn');
-  const totalForms = document.getElementById('id_form-TOTAL_FORMS');
-  const emptyForm = document.getElementById('empty-form').innerHTML;
+  const gadgetSelect = document.getElementById('gadget-select');
+  const daysSelect   = document.getElementById('days-select');
+  const qtyInput     = document.getElementById('qty-input');
+  const joinWaitlist = document.getElementById('join-waitlist');
+  const panel        = document.getElementById('avail-panel');
+  const warn         = document.getElementById('waitlist-warn');
+  const submitBtn    = document.getElementById('submit-btn');
 
-  function addDays(days) {
+  // Pre-select gadget if passed via query string
+  const params = new URLSearchParams(window.location.search);
+  const preGadget = params.get('gadget');
+  if (preGadget) {
+    gadgetSelect.value = preGadget;
+  }
+  if (params.get('waitlist') === '1') {
+    joinWaitlist.checked = true;
+  }
+
+  function addDays(n) {
     const d = new Date();
-    d.setDate(d.getDate() + days - 1);
+    d.setDate(d.getDate() + parseInt(n) - 1);
     return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
   }
 
-  function updateRowInfo(row) {
-    const gadgetSelect = row.querySelector('.gadget-select');
-    const daysInput = row.querySelector('.days-input');
-    const qtyInput = row.querySelector('.qty-input');
-    const endDateVal = row.querySelector('.end-date-info .val');
-    const availVal = row.querySelector('.availability-info .val');
+  function refreshPanel() {
+    const gId = gadgetSelect.value;
+    const days = daysSelect.value;
+    const qty  = parseInt(qtyInput.value) || 1;
 
-    const gadgetId = gadgetSelect.value;
-    const days = parseInt(daysInput.value) || 1;
-    const requestedQty = parseInt(qtyInput.value) || 1;
+    // Always update end date
+    document.getElementById('ap-enddate').textContent = addDays(days);
 
-    endDateVal.textContent = addDays(days);
+    if (!gId) { panel.style.display = 'none'; warn.style.display = 'none'; return; }
 
-    if (!gadgetId) {
-      availVal.textContent = '–';
-      availVal.style.color = 'inherit';
-      return;
-    }
-
-    let totalRequestedForThisGadget = 0;
-    document.querySelectorAll('.gadget-form-row').forEach(r => {
-      const gId = r.querySelector('.gadget-select').value;
-      const q = parseInt(r.querySelector('.qty-input').value) || 0;
-      if (gId === gadgetId) {
-        totalRequestedForThisGadget += q;
-      }
-    });
-
-    fetch(`/api/gadget/${gadgetId}/`)
+    fetch(`/api/gadget/${gId}/`)
       .then(r => r.json())
-      .then(data => {
-        if (data.available >= totalRequestedForThisGadget) {
-          availVal.textContent = `✅ ${data.available} available`;
-          availVal.style.color = 'var(--success)';
-        } else {
-          let extraInfo = data.expected_return_date ? `(Exp. Return: ${data.expected_return_date})` : '';
-          availVal.textContent = `❌ Need ${totalRequestedForThisGadget}, only ${data.available} avail. ${extraInfo}`;
-          availVal.style.color = 'var(--danger)';
-        }
+      .then(d => {
+        panel.style.display = 'block';
+
+        const avEl = document.getElementById('ap-available');
+        avEl.textContent = `${d.available} / ${d.total_quantity}`;
+        avEl.className = 'avail-val ' + (d.available >= qty ? 'green' : 'red');
+
+        document.getElementById('ap-reserved').textContent = d.reserved;
+        document.getElementById('ap-issued').textContent   = d.issued;
+        document.getElementById('ap-waitlist').textContent = `${d.waitlist_count} student(s)`;
+        document.getElementById('ap-next').textContent     = d.next_available_date || 'Not scheduled';
+        document.getElementById('ap-status').textContent   = d.status;
+
+        const insufficient = d.available < qty;
+        warn.style.display = insufficient ? 'block' : 'none';
+        submitBtn.textContent = insufficient && joinWaitlist.checked
+          ? 'Join Waitlist' : 'Submit Request';
       })
-      .catch(err => {
-        console.error(err);
-        availVal.textContent = 'Error';
-      });
+      .catch(() => { panel.style.display = 'none'; });
   }
 
-  function updateAllRows() {
-    document.querySelectorAll('.gadget-form-row').forEach(row => updateRowInfo(row));
-  }
+  gadgetSelect.addEventListener('change', refreshPanel);
+  daysSelect.addEventListener('change', refreshPanel);
+  qtyInput.addEventListener('input', refreshPanel);
+  joinWaitlist.addEventListener('change', refreshPanel);
 
-  formContainer.addEventListener('change', (e) => {
-    if (e.target.classList.contains('gadget-select') || 
-        e.target.classList.contains('days-input') || 
-        e.target.classList.contains('qty-input')) {
-      updateAllRows();
-    }
-  });
-
-  formContainer.addEventListener('input', (e) => {
-    if (e.target.classList.contains('qty-input') || e.target.classList.contains('days-input')) {
-      updateAllRows();
-    }
-  });
-
-  addFormBtn.addEventListener('click', () => {
-    const formCount = parseInt(totalForms.value);
-    const newFormHtml = emptyForm.replace(/__prefix__/g, formCount);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = newFormHtml;
-    const newRow = tempDiv.firstElementChild;
-    formContainer.appendChild(newRow);
-    totalForms.value = formCount + 1;
-    updateAllRows();
-  });
-
-  formContainer.addEventListener('click', (e) => {
-    if (e.target.classList.contains('remove-form-btn')) {
-      e.target.closest('.gadget-form-row').remove();
-      const rows = formContainer.querySelectorAll('.gadget-form-row');
-      totalForms.value = rows.length;
-      
-      rows.forEach((row, index) => {
-        row.querySelectorAll('input, select, label').forEach(el => {
-          if (el.name) el.name = el.name.replace(/form-\d+-/, `form-${index}-`);
-          if (el.id) el.id = el.id.replace(/id_form-\d+-/, `id_form-${index}-`);
-          if (el.getAttribute('for')) el.setAttribute('for', el.getAttribute('for').replace(/id_form-\d+-/, `id_form-${index}-`));
-        });
-      });
-      updateAllRows();
-    }
-  });
-
-  updateAllRows();
+  refreshPanel();
 </script>
 {% endblock %}

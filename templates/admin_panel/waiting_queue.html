@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Waiting Queue – GadgetMS{% endblock %}
+{% block nav_admin_queue %}active{% endblock %}
+
+{% block content %}
+<style>
+  .queue-row {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    transition: box-shadow 0.15s;
+  }
+  .queue-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .queue-pos {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(124,58,237,0.15);
+    border: 2px solid rgba(124,58,237,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; color: #a78bfa;
+    flex-shrink: 0;
+  }
+  .queue-info { flex: 1; min-width: 0; }
+  .queue-name { font-weight: 700; font-size: 15px; }
+  .queue-sub  { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .queue-meta { display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12px; }
+  .queue-meta span { display:flex;align-items:center;gap:4px;color:var(--text2); }
+  .queue-meta strong { color: var(--text); }
+  .queue-actions { display:flex;gap:8px;flex-shrink:0; }
+
+  .stock-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .stock-chip.ok    { background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#4ade80; }
+  .stock-chip.low   { background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:#facc15; }
+  .stock-chip.empty { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171; }
+</style>
+
+<div class="page-header flex-between">
+  <div>
+    <h1>Waiting Queue</h1>
+    <p>Students waiting for gadget stock. Approve when stock is available.</p>
+  </div>
+  <a href="{% url 'admin_requests' %}" class="btn btn-ghost">← All Requests</a>
+</div>
+
+<!-- Filter by gadget -->
+<form method="get" style="margin-bottom:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+  <select name="gadget" class="form-control" style="max-width:280px;flex:1;" onchange="this.form.submit()">
+    <option value="">— All Gadgets —</option>
+    {% for g in gadgets_with_queue %}
+    <option value="{{ g.id }}" {% if gadget_filter == g.id|stringformat:"s" %}selected{% endif %}>
+      {{ g.name }} ({{ g.waiting_queues.count }} waiting)
+    </option>
+    {% endfor %}
+  </select>
+  {% if gadget_filter %}
+  <a href="{% url 'admin_waiting_queue' %}" class="btn btn-ghost btn-sm">Clear Filter</a>
+  {% endif %}
+  <span style="color:var(--text2);font-size:13px;">{{ total }} entry{{ total|pluralize:"ies" }} total</span>
+</form>
+
+{% if enriched %}
+  {% for entry in enriched %}
+  {% with wq=entry.wq %}
+  <div class="queue-row">
+
+    <!-- Position badge -->
+    <div class="queue-pos">#{{ wq.queue_position }}</div>
+
+    <!-- Info -->
+    <div class="queue-info">
+      <div class="queue-name">{{ wq.student.get_full_name }}</div>
+      <div class="queue-sub">{{ wq.student.email }} · GR: {{ wq.student.student_profile.gr_number }}</div>
+      <div class="queue-meta">
+        <span>🔧 <strong>{{ wq.gadget.name }}</strong></span>
+        <span>📦 Qty: <strong>{{ wq.quantity }}</strong></span>
+        <span>📅 Duration: <strong>{{ wq.duration_days }} day(s)</strong></span>
+        <span>🗓️ Joined: <strong>{{ wq.created_at|date:"d M Y" }}</strong></span>
+        {% if entry.estimated_date %}
+        <span>⏰ Est: <strong style="color:#60a5fa;">{{ entry.estimated_date|date:"d M Y" }}</strong></span>
+        {% else %}
+        <span>⏰ Est: <strong style="color:var(--text2);">Unknown</strong></span>
+        {% endif %}
+      </div>
+      <!-- Stock indicator -->
+      <div style="margin-top:8px;">
+        {% with avail=wq.gadget.available_quantity %}
+        {% if avail >= wq.quantity %}
+          <span class="stock-chip ok">✅ {{ avail }} available – can approve now</span>
+        {% elif avail > 0 %}
+          <span class="stock-chip low">⚠️ Only {{ avail }} available (need {{ wq.quantity }})</span>
+        {% else %}
+          <span class="stock-chip empty">❌ Out of stock ({{ wq.gadget.issued_quantity }} issued)</span>
+        {% endif %}
+        {% endwith %}
+        {% if wq.notified %}
+        <span class="stock-chip ok" style="margin-left:6px;">🔔 Notified</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="queue-actions">
+      {% if wq.gadget.available_quantity >= wq.quantity %}
+      <form method="post" action="{% url 'admin_approve_queue' wq.id %}">
+        {% csrf_token %}
+        <button class="btn btn-success btn-sm">✅ Approve &amp; Create Request</button>
+      </form>
+      {% else %}
+      <button class="btn btn-sm" style="opacity:0.4;cursor:not-allowed;" disabled title="Not enough stock">✅ Approve</button>
+      {% endif %}
+      <form method="post" action="{% url 'admin_reject_queue' wq.id %}"
+            onsubmit="return confirm('Remove {{ wq.student.get_full_name }} from waitlist?')">
+        {% csrf_token %}
+        <button class="btn btn-danger btn-sm">🗑️ Remove</button>
+      </form>
+    </div>
+
+  </div>
+  {% endwith %}
+  {% endfor %}
+
+{% else %}
+<div class="empty-state">
+  <div class="icon">📋</div>
+  <p>No students in the waiting queue{% if gadget_filter %} for this gadget{% endif %}.</p>
+</div>
+{% endif %}
+
+{% endblock %}

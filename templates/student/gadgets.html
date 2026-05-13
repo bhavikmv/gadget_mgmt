@@ -4,12 +4,66 @@
 
 {% block content %}
 <style>
-  .badge-Available { background-color: #198754; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-  .badge-Almost-Full { background-color: #ffc107; color: black; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-  .badge-Out-of-Stock { background-color: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-  .badge-Available-Soon { background-color: #0dcaf0; color: black; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-  .gadget-detail-list { font-size: 12px; margin-top: 8px; color: var(--text2); line-height: 1.6; }
-  .gadget-detail-list strong { color: var(--text); }
+  .gadgets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .gadget-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .gadget-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+  /* Status badge (top-right corner) */
+  .stock-badge {
+    position: absolute; top: 14px; right: 14px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .stock-badge.available   { background:#166534; color:#bbf7d0; }
+  .stock-badge.almost-full { background:#713f12; color:#fef08a; }
+  .stock-badge.soon        { background:#1e3a5f; color:#93c5fd; }
+  .stock-badge.out         { background:#7f1d1d; color:#fecaca; }
+
+  .gadget-icon-wrap {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-bottom: 14px;
+  }
+  .gadget-title { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .gadget-cat   { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+
+  .stock-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+  }
+  .stock-cell {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  .stock-cell .label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stock-cell .value { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .stock-cell.highlight .value { color: var(--accent); }
+
+  .avail-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text2);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+  .avail-row strong { color: var(--text); }
+
+  .btn-full { width: 100%; justify-content: center; margin-top: 14px; }
 </style>
 
 <div class="page-header">
@@ -17,52 +71,103 @@
   <p>Browse and search all gadgets available for borrowing.</p>
 </div>
 
-<form method="get" class="search-bar">
-  <input type="text" name="q" class="form-control" placeholder="Search gadgets by name or category..." value="{{ query }}">
+<form method="get" class="search-bar" style="margin-bottom:20px;">
+  <input type="text" name="q" class="form-control"
+         placeholder="Search gadgets by name or category…"
+         value="{{ query }}">
   <button type="submit" class="btn btn-primary">Search</button>
   {% if query %}<a href="{% url 'gadgets' %}" class="btn btn-ghost">Clear</a>{% endif %}
 </form>
 
 {% if gadgets %}
-<p style="color:var(--text2);font-size:13px;margin-bottom:16px;">{{ gadgets.count }} gadget{{ gadgets.count|pluralize }} found</p>
+<p style="color:var(--text2);font-size:13px;margin-bottom:16px;">
+  {{ total_count }} gadget{{ total_count|pluralize }} found
+</p>
 <div class="gadgets-grid">
   {% for g in gadgets %}
-  <div class="gadget-card" style="position:relative;">
-    <div style="position:absolute; top: 10px; right: 10px;">
-      <span class="badge-{{ g.stock_status|slugify|title }}">{{ g.stock_status }}</span>
-    </div>
-    
-    <div class="gadget-icon">
-      {% if g.category.name|lower == 'laptop' %}💻
-      {% elif g.category.name|lower == 'tablet' %}📱
-      {% elif g.category.name|lower == 'camera' %}📷
-      {% elif g.category.name|lower == 'projector' %}📽️
-      {% elif g.category.name|lower == 'calculator' %}🧮
-      {% else %}🔧{% endif %}
-    </div>
-    <div class="gadget-name" style="margin-top: 10px;">{{ g.name }}</div>
-    <div class="gadget-category">{{ g.category.name|default:"Uncategorized" }}</div>
-    
-    <div class="gadget-detail-list">
-      <div>Available: <strong>{{ g.available_quantity }}</strong> / {{ g.total_quantity }}</div>
-      <div>Reserved: <strong>{{ g.reserved_quantity }}</strong></div>
-      <div>Issued: <strong>{{ g.issued_quantity }}</strong></div>
-      {% if g.expected_return_date %}
-        <div>Expected Return: <strong>{{ g.expected_return_date|date:"d M Y" }}</strong></div>
-      {% endif %}
-      {% if g.waiting_queues.count > 0 %}
-        <div>Waitlist: <strong>{{ g.waiting_queues.count }} student(s)</strong></div>
-      {% endif %}
+  {% with stat=g %}
+  <div class="gadget-card">
+
+    <!-- Status badge -->
+    {% if stat.status == 'Available' %}
+      <span class="stock-badge available">Available</span>
+    {% elif stat.status == 'Almost Full' %}
+      <span class="stock-badge almost-full">Almost Full</span>
+    {% elif stat.status == 'Available Soon' %}
+      <span class="stock-badge soon">Available Soon</span>
+    {% else %}
+      <span class="stock-badge out">Out of Stock</span>
+    {% endif %}
+
+    <!-- Icon -->
+    <div class="gadget-icon-wrap">
+      {% with cat=stat.gadget.category.name|lower %}
+        {% if cat == 'laptop' %}💻
+        {% elif cat == 'tablet' %}📱
+        {% elif cat == 'camera' %}📷
+        {% elif cat == 'projector' %}📽️
+        {% elif cat == 'drone' or cat == 'dron' %}🚁
+        {% elif cat == 'pump' %}🔩
+        {% else %}🔧{% endif %}
+      {% endwith %}
     </div>
 
-    <div style="margin-top:14px;">
-      {% if g.available_quantity > 0 %}
-        <a href="{% url 'request_gadget' %}" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center;">Request Now</a>
+    <div class="gadget-title">{{ stat.gadget.name }}</div>
+    <div class="gadget-cat">{{ stat.gadget.category.name|default:"Uncategorized" }}</div>
+
+    <!-- Stock grid -->
+    <div class="stock-grid">
+      <div class="stock-cell highlight">
+        <div class="label">Available</div>
+        <div class="value">{{ stat.available }} / {{ stat.total }}</div>
+      </div>
+      <div class="stock-cell">
+        <div class="label">Reserved</div>
+        <div class="value">{{ stat.reserved }}</div>
+      </div>
+      <div class="stock-cell">
+        <div class="label">Issued</div>
+        <div class="value">{{ stat.issued }}</div>
+      </div>
+      <div class="stock-cell">
+        <div class="label">Waitlist</div>
+        <div class="value">{{ stat.waitlist_count }}</div>
+      </div>
+    </div>
+
+    <!-- Next available date -->
+    {% if stat.available == 0 %}
+    <div class="avail-row">
+      🗓️
+      {% if stat.next_available_date %}
+        Next available: <strong>{{ stat.next_available_date|date:"d M Y" }}</strong>
       {% else %}
-        <a href="{% url 'request_gadget' %}" class="btn btn-warning btn-sm" style="width: 100%; justify-content: center;">Join Waitlist</a>
+        <strong>No return date scheduled</strong>
       {% endif %}
     </div>
+    {% endif %}
+
+    <!-- Description -->
+    {% if stat.gadget.description %}
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">
+      {{ stat.gadget.description|truncatechars:80 }}
+    </p>
+    {% endif %}
+
+    <!-- CTA button -->
+    {% if stat.available > 0 %}
+      <a href="{% url 'request_gadget' %}?gadget={{ stat.gadget.id }}"
+         class="btn btn-primary btn-sm btn-full">
+        Request Now
+      </a>
+    {% else %}
+      <a href="{% url 'request_gadget' %}?gadget={{ stat.gadget.id }}&waitlist=1"
+         class="btn btn-warning btn-sm btn-full">
+        Join Waitlist {% if stat.waitlist_count > 0 %}(#{{ stat.waitlist_count|add:1 }}){% endif %}
+      </a>
+    {% endif %}
   </div>
+  {% endwith %}
   {% endfor %}
 </div>
 {% else %}

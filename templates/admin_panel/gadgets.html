@@ -3,10 +3,22 @@
 {% block nav_admin_gadgets %}active{% endblock %}
 
 {% block content %}
+<style>
+  .stock-mini { display:flex;gap:6px;flex-wrap:wrap;margin-top:6px; }
+  .sm-chip {
+    font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;
+    background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  }
+  .sm-chip.avail  { border-color:rgba(74,222,128,0.4);color:#4ade80; }
+  .sm-chip.reserv { border-color:rgba(250,204,21,0.4);color:#facc15; }
+  .sm-chip.issued { border-color:rgba(248,113,113,0.4);color:#f87171; }
+  .sm-chip.queue  { border-color:rgba(167,139,250,0.4);color:#a78bfa; }
+</style>
+
 <div class="page-header flex-between">
   <div>
     <h1>Gadget Management</h1>
-    <p>Add, edit, and manage all gadgets in the system.</p>
+    <p>Add, edit, and manage all gadgets and their stock.</p>
   </div>
   <a href="{% url 'admin_gadget_add' %}" class="btn btn-primary">+ Add Gadget</a>
 </div>
@@ -16,34 +28,69 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>ID</th><th>Name</th><th>Category</th><th>Quantity</th><th>Status</th><th>Added</th><th>Actions</th></tr>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Stock Breakdown</th>
+          <th>Next Available</th>
+          <th>Waitlist</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         {% for g in gadgets %}
+        {% with stat=g %}
         <tr>
-          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">{{ g.id }}</td>
-          <td><strong>{{ g.name }}</strong><br><span style="font-size:12px;color:var(--text2);">{{ g.description|truncatechars:40 }}</span></td>
-          <td>{{ g.category.name|default:"Uncategorized" }}</td>
-          <td><span class="qty-badge">{{ g.quantity }}</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">{{ stat.gadget.id }}</td>
           <td>
-            {% if g.is_active %}
-            <span class="badge badge-approved">Active</span>
+            <strong>{{ stat.gadget.name }}</strong><br>
+            <span style="font-size:12px;color:var(--text2);">{{ stat.gadget.description|truncatechars:40 }}</span>
+          </td>
+          <td>{{ stat.gadget.category.name|default:"Uncategorized" }}</td>
+          <td>
+            <div class="stock-mini">
+              <span class="sm-chip avail">✅ {{ stat.available }}/{{ stat.total }}</span>
+              <span class="sm-chip reserv">🔒 {{ stat.reserved }}</span>
+              <span class="sm-chip issued">📤 {{ stat.issued }}</span>
+            </div>
+          </td>
+          <td style="font-size:13px;">
+            {% if stat.next_available_date %}
+              {{ stat.next_available_date|date:"d M Y" }}
+            {% elif stat.available > 0 %}
+              <span style="color:#4ade80;">Now</span>
             {% else %}
-            <span class="badge badge-rejected">Inactive</span>
+              <span style="color:var(--text2);">Unknown</span>
             {% endif %}
           </td>
-          <td style="font-size:13px;color:var(--text2);">{{ g.created_at|date:"d M Y" }}</td>
           <td>
-            <a href="{% url 'admin_gadget_edit' g.id %}" class="btn btn-ghost btn-sm">Edit</a>
-            {% if g.is_active %}
-            <form method="post" action="{% url 'admin_gadget_delete' g.id %}" style="display:inline;"
-                  onsubmit="return confirm('Deactivate {{ g.name }}?')">
+            {% if stat.waitlist_count > 0 %}
+              <span class="sm-chip queue">{{ stat.waitlist_count }} waiting</span>
+            {% else %}
+              <span style="color:var(--text2);font-size:13px;">–</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if stat.gadget.is_active %}
+            <span class="badge badge-issued" style="background:#065f46;color:#a7f3d0;">Active</span>
+            {% else %}
+            <span class="badge badge-rejected" style="background:#7f1d1d;color:#fecaca;">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'admin_gadget_edit' stat.gadget.id %}" class="btn btn-ghost btn-sm">Edit</a>
+            {% if stat.gadget.is_active %}
+            <form method="post" action="{% url 'admin_gadget_delete' stat.gadget.id %}" style="display:inline;"
+                  onsubmit="return confirm('Deactivate {{ stat.gadget.name }}?')">
               {% csrf_token %}
               <button class="btn btn-danger btn-sm">Deactivate</button>
             </form>
             {% endif %}
           </td>
         </tr>
+        {% endwith %}
         {% endfor %}
       </tbody>
     </table>
