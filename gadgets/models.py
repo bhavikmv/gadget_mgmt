@@ -68,6 +68,8 @@ class Request(models.Model):
     
     expected_issue_date = models.DateField(null=True, blank=True)
     expected_return_date = models.DateField()
+    issue_date = models.DateField(null=True, blank=True)
+    return_date = models.DateField(null=True, blank=True)
     
     admin_notes = models.TextField(blank=True)
     

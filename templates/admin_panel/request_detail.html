@@ -35,15 +35,31 @@
         {% endfor %}
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:24px;margin-top:32px;background:rgba(255,255,255,0.02);padding:20px;border-radius:8px;border:1px solid var(--border);">
         <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">Expected Issue Date</label>
-          <div style="font-weight:600;margin-top:4px;">{{ request.expected_issue_date|date:"d F Y"|default:"Not specified" }}</div>
+          <label class="form-label" style="opacity:0.6;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Requested On</label>
+          <div style="font-weight:600;margin-top:4px;font-size:14px;">{{ request.created_at|date:"d M Y" }}</div>
         </div>
         <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">Expected Return Date</label>
-          <div style="font-weight:600;margin-top:4px;">{{ request.expected_return_date|date:"d F Y" }}</div>
+          <label class="form-label" style="opacity:0.6;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Expected Issue</label>
+          <div style="font-weight:600;margin-top:4px;font-size:14px;">{{ request.expected_issue_date|date:"d M Y"|default:"Not specified" }}</div>
         </div>
+        <div>
+          <label class="form-label" style="opacity:0.6;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Expected Return</label>
+          <div style="font-weight:600;margin-top:4px;font-size:14px;">{{ request.expected_return_date|date:"d M Y" }}</div>
+        </div>
+        {% if request.issue_date %}
+        <div>
+          <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--success);">Actual Issue</label>
+          <div style="font-weight:600;margin-top:4px;font-size:14px;color:var(--success);">{{ request.issue_date|date:"d M Y" }}</div>
+        </div>
+        {% endif %}
+        {% if request.return_date %}
+        <div>
+          <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--warning);">Actual Return</label>
+          <div style="font-weight:600;margin-top:4px;font-size:14px;color:var(--warning);">{{ request.return_date|date:"d M Y" }}</div>
+        </div>
+        {% endif %}
       </div>
 
       {% if request.admin_notes %}

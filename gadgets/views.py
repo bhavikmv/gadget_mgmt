@@ -73,6 +73,7 @@ def request_gadget_view(request):
                             req = Request.objects.create(
                                 student=request.user,
                                 status='pending',
+                                expected_issue_date=start_date,
                                 expected_return_date=end_date
                             )
                             RequestItem.objects.create(request=req, gadget=gadget, quantity=quantity)
@@ -217,6 +218,7 @@ def admin_issue_request(request, pk):
         if req.status in ['approved', 'ready']:
             with transaction.atomic():
                 req.status = 'issued'
+                req.issue_date = date.today()
                 req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
                 req.save()
                 
@@ -260,6 +262,7 @@ def admin_mark_returned(request, pk):
         if req.status == 'issued':
             with transaction.atomic():
                 req.status = 'returned'
+                req.return_date = date.today()
                 req.save()
                 
                 for item in req.items.all():
