@@ -15,7 +15,7 @@ class CategoryForm(forms.ModelForm):
 class GadgetForm(forms.ModelForm):
     class Meta:
         model = Gadget
-        fields = ['name', 'category', 'description', 'total_quantity', 'is_active']
+        fields = ['name', 'category', 'description', 'total_quantity', 'is_active', 'image']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }

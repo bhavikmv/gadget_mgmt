@@ -524,7 +524,7 @@ def admin_category_delete(request, pk):
 @user_passes_test(is_admin, login_url='/login/')
 def admin_gadget_add(request):
     if request.method == 'POST':
-        form = GadgetForm(request.POST)
+        form = GadgetForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, 'Gadget added successfully!')
@@ -538,7 +538,7 @@ def admin_gadget_add(request):
 def admin_gadget_edit(request, pk):
     gadget = get_object_or_404(Gadget, pk=pk)
     if request.method == 'POST':
-        form = GadgetForm(request.POST, instance=gadget)
+        form = GadgetForm(request.POST, request.FILES, instance=gadget)
         if form.is_valid():
             form.save()
             messages.success(request, f'"{gadget.name}" updated.')
