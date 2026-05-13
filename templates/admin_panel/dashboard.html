@@ -3,6 +3,15 @@
 {% block nav_admin_dash %}active{% endblock %}
 
 {% block content %}
+<style>
+  .badge-pending { background-color: #ffc107; color: #000; }
+  .badge-approved { background-color: #fd7e14; color: #fff; }
+  .badge-ready { background-color: #0d6efd; color: #fff; }
+  .badge-issued { background-color: #198754; color: #fff; }
+  .badge-rejected { background-color: #dc3545; color: #fff; }
+  .badge-returned { background-color: #6c757d; color: #fff; }
+</style>
+
 <div class="page-header">
   <h1>Admin Dashboard</h1>
   <p>System overview and recent activity.</p>
@@ -13,22 +22,17 @@
   <div class="stat-card pending">
     <div class="stat-icon">⏳</div>
     <div class="stat-num">{{ pending }}</div>
-    <div class="stat-label">Pending Requests</div>
+    <div class="stat-label">Pending Review</div>
   </div>
   <div class="stat-card approved">
-    <div class="stat-icon">✅</div>
+    <div class="stat-icon">🕒</div>
     <div class="stat-num">{{ approved }}</div>
-    <div class="stat-label">Active Approvals</div>
+    <div class="stat-label">Approved (Wait for Issue)</div>
   </div>
-  <div class="stat-card total">
-    <div class="stat-icon">⚙️</div>
-    <div class="stat-num">{{ total_gadgets }}</div>
-    <div class="stat-label">Active Gadgets</div>
-  </div>
-  <div class="stat-card returned">
-    <div class="stat-icon">🎓</div>
-    <div class="stat-num">{{ total_students }}</div>
-    <div class="stat-label">Students</div>
+  <div class="stat-card ready">
+    <div class="stat-icon">📦</div>
+    <div class="stat-num">{{ ready }}</div>
+    <div class="stat-label">Ready for Pickup</div>
   </div>
   <div class="stat-card overdue">
     <div class="stat-icon">⚠️</div>
@@ -49,8 +53,8 @@
       <div style="font-weight:700;font-size:14px;">{{ g.name }}</div>
       <div style="color:var(--text2);font-size:12px;margin-top:2px;">{{ g.category.name|default:"Uncategorized" }}</div>
       <div style="margin-top:8px;display:flex;align-items:center;gap:6px;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);">{{ g.quantity }}</span>
-        <span style="color:var(--text2);font-size:12px;">units</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--accent);">{{ g.available_quantity }}</span>
+        <span style="color:var(--text2);font-size:12px;">/ {{ g.total_quantity }} avail</span>
       </div>
     </div>
     {% empty %}
@@ -69,34 +73,51 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>#</th><th>Student</th><th>Gadget</th><th>Dates</th><th>Status</th><th>Action</th></tr>
+        <tr><th class="hide-on-mobile">#</th><th>Student</th><th>Items</th><th class="hide-on-mobile">Dates</th><th>Status</th><th>Action</th></tr>
       </thead>
       <tbody>
-        {% for b in recent_requests %}
+        {% for r in recent_requests %}
         <tr>
-          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ b.id }}</td>
+          <td class="hide-on-mobile" style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</td>
           <td>
-            <strong>{{ b.student.get_full_name }}</strong><br>
-            <span style="font-size:12px;color:var(--text2);">{{ b.student.student_profile.gr_number }}</span>
-          </td>
-          <td>{{ b.gadget.name }}</td>
-          <td style="font-size:13px;">{{ b.start_date|date:"d M" }} → {{ b.end_date|date:"d M Y" }}</td>
-          <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span>
-            {% if b.is_overdue %}<span class="overdue-tag">OVERDUE</span>{% endif %}
+            <strong>{{ r.student.get_full_name }}</strong><br>
+            <span style="font-size:12px;color:var(--text2);">{{ r.student.student_profile.gr_number }}</span>
           </td>
           <td>
-            <a href="{% url 'admin_request_detail' b.id %}" class="btn btn-ghost btn-sm" style="margin-right: 4px;">View</a>
-            {% if b.status == 'pending' %}
-            <form method="post" action="{% url 'admin_approve' b.id %}" style="display:inline;">
+            {% for item in r.items.all %}
+              <div style="font-size: 13px;">{{ item.quantity }}x {{ item.gadget.name }}</div>
+            {% endfor %}
+          </td>
+          <td class="hide-on-mobile" style="font-size:13px;">{{ r.expected_issue_date|date:"d M"|default:"-" }} → {{ r.expected_return_date|date:"d M Y" }}</td>
+          <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+          </td>
+          <td>
+            <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm" style="margin-right: 4px;">View</a>
+            {% if r.status == 'pending' %}
+            <form method="post" action="{% url 'admin_approve' r.id %}" style="display:inline;">
               {% csrf_token %}
               <button class="btn btn-success btn-sm">Approve</button>
             </form>
-            <form method="post" action="{% url 'admin_reject' b.id %}" style="display:inline;">
+            <form method="post" action="{% url 'admin_reject' r.id %}" style="display:inline;">
               {% csrf_token %}
               <button class="btn btn-danger btn-sm">Reject</button>
             </form>
-            {% elif b.status == 'approved' %}
-            <form method="post" action="{% url 'admin_return' b.id %}" style="display:inline;">
+            {% elif r.status == 'approved' %}
+            <form method="post" action="{% url 'admin_mark_ready' r.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button class="btn btn-primary btn-sm">Mark Ready</button>
+            </form>
+            <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button class="btn btn-success btn-sm">Issue</button>
+            </form>
+            {% elif r.status == 'ready' %}
+            <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button class="btn btn-success btn-sm">Issue</button>
+            </form>
+            {% elif r.status == 'issued' %}
+            <form method="post" action="{% url 'admin_return' r.id %}" style="display:inline;">
               {% csrf_token %}
               <button class="btn btn-warning btn-sm">Mark Returned</button>
             </form>

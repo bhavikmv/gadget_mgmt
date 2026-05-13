@@ -3,6 +3,20 @@
 {% block nav_dash %}active{% endblock %}
 
 {% block content %}
+<style>
+  .badge-pending { background-color: #ffc107; color: #000; }
+  .badge-approved { background-color: #fd7e14; color: #fff; } /* Orange */
+  .badge-ready { background-color: #0d6efd; color: #fff; } /* Blue */
+  .badge-issued { background-color: #198754; color: #fff; } /* Green */
+  .badge-rejected { background-color: #dc3545; color: #fff; } /* Red */
+  .badge-returned { background-color: #6c757d; color: #fff; } /* Gray */
+  
+  .badge-Available { background-color: #198754; color: white; }
+  .badge-Almost-Full { background-color: #ffc107; color: black; }
+  .badge-Out-of-Stock { background-color: #dc3545; color: white; }
+  .badge-Available-Soon { background-color: #0dcaf0; color: black; }
+</style>
+
 <div class="page-header">
   <h1>My Dashboard</h1>
   <p>Welcome back, {{ user.first_name }}! Here's your gadget activity.</p>
@@ -13,22 +27,22 @@
   <div class="stat-card pending">
     <div class="stat-icon">⏳</div>
     <div class="stat-num">{{ pending.count }}</div>
-    <div class="stat-label">Pending Requests</div>
+    <div class="stat-label">Pending Review</div>
   </div>
   <div class="stat-card approved">
-    <div class="stat-icon">✅</div>
+    <div class="stat-icon">🕒</div>
     <div class="stat-num">{{ approved.count }}</div>
-    <div class="stat-label">Approved</div>
+    <div class="stat-label">Waiting for Issue</div>
   </div>
-  <div class="stat-card rejected">
-    <div class="stat-icon">❌</div>
-    <div class="stat-num">{{ rejected.count }}</div>
-    <div class="stat-label">Rejected</div>
+  <div class="stat-card ready">
+    <div class="stat-icon">📦</div>
+    <div class="stat-num">{{ ready.count }}</div>
+    <div class="stat-label">Ready for Pickup</div>
   </div>
-  <div class="stat-card returned">
-    <div class="stat-icon">🔄</div>
-    <div class="stat-num">{{ returned.count }}</div>
-    <div class="stat-label">Returned</div>
+  <div class="stat-card issued">
+    <div class="stat-icon">✅</div>
+    <div class="stat-num">{{ issued.count }}</div>
+    <div class="stat-label">Issued to You</div>
   </div>
 </div>
 
@@ -38,44 +52,81 @@
   <a href="{% url 'gadgets' %}" class="btn btn-ghost">Browse Gadgets</a>
 </div>
 
-<!-- All Bookings Table -->
-<div class="card">
+<!-- Waiting Queue -->
+{% if waiting_list %}
+<div class="card" style="margin-bottom: 30px;">
   <div class="flex-between" style="margin-bottom:20px;">
-    <h2 style="font-size:16px;font-weight:700;">All My Requests</h2>
-    <span class="text-muted" style="font-size:13px;">{{ bookings.count }} total</span>
+    <h2 style="font-size:16px;font-weight:700;">My Waitlist</h2>
+    <span class="text-muted" style="font-size:13px;">{{ waiting_list.count }} items</span>
   </div>
-
-  {% if bookings %}
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>#</th>
           <th>Gadget</th>
-          <th>Duration</th>
-          <th>Start</th>
-          <th>End</th>
+          <th>Queue Position</th>
+          <th>Expected Availability</th>
           <th>Status</th>
-          <th>Requested</th>
         </tr>
       </thead>
       <tbody>
-        {% for b in bookings %}
+        {% for w in waiting_list %}
         <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ b.id }}</span></td>
-          <td><strong>{{ b.gadget.name }}</strong></td>
-          <td>{{ b.days }} day{{ b.days|pluralize }}</td>
-          <td>{{ b.start_date|date:"d M Y" }}</td>
+          <td><strong>{{ w.gadget.name }}</strong></td>
+          <td><span style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ w.queue_position }}</span></td>
+          <td>{{ w.gadget.next_available_date|date:"d M Y"|default:"Unknown" }}</td>
           <td>
-            {{ b.end_date|date:"d M Y" }}
-            {% if b.is_overdue %}<span class="overdue-tag">OVERDUE!</span>{% endif %}
+            {% if w.notified %}
+              <span class="badge badge-ready">Notified - Available</span>
+            {% else %}
+              <span class="badge badge-pending">Waiting</span>
+            {% endif %}
           </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- All Requests Table -->
+<div class="card">
+  <div class="flex-between" style="margin-bottom:20px;">
+    <h2 style="font-size:16px;font-weight:700;">All My Requests</h2>
+    <span class="text-muted" style="font-size:13px;">{{ requests.count }} total</span>
+  </div>
+
+  {% if requests %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="hide-on-mobile">#</th>
+          <th>Gadgets</th>
+          <th class="hide-on-mobile">Expected Issue</th>
+          <th>Return Date</th>
+          <th>Status</th>
+          <th class="hide-on-mobile">Requested</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests %}
+        <tr>
+          <td class="hide-on-mobile"><span style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</span></td>
           <td>
-            <span class="badge badge-{{ b.status }}">
-              {{ b.get_status_display }}
+            {% for item in r.items.all %}
+              <strong>{{ item.quantity }}x {{ item.gadget.name }}</strong><br>
+            {% endfor %}
+          </td>
+          <td class="hide-on-mobile">{{ r.expected_issue_date|date:"d M Y"|default:"-" }}</td>
+          <td>{{ r.expected_return_date|date:"d M Y" }}</td>
+          <td>
+            <span class="badge badge-{{ r.status }}">
+              {{ r.get_status_display }}
             </span>
           </td>
-          <td style="color:var(--text2);font-size:13px;">{{ b.requested_at|date:"d M Y" }}</td>
+          <td class="hide-on-mobile" style="color:var(--text2);font-size:13px;">{{ r.created_at|date:"d M Y" }}</td>
         </tr>
         {% endfor %}
       </tbody>

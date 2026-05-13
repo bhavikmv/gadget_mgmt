@@ -18,3 +18,12 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    'send-return-reminders-every-day': {
+        'task': 'notifications.tasks.send_return_reminders_task',
+        'schedule': crontab(hour=9, minute=0),  # Run every day at 9 AM
+    },
+}

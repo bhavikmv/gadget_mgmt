@@ -102,6 +102,7 @@ body {
 .main-content {
   margin-left: 260px;
   flex: 1;
+  min-width: 0;
   padding: 32px;
   max-width: 100%;
   transition: padding 0.3s ease;
@@ -327,6 +328,18 @@ select.form-control { cursor: pointer; }
 .tab.active, .tab:hover { background: var(--bg); color: var(--text); }
 .tab.active { color: var(--accent); }
 
+.tabs {
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-grid-2-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
 .overdue-tag { color: var(--danger); font-size: 11px; font-weight: 600; margin-left: 4px; }
 
 /* ── MOBILE NAV OVERLAY ── */
@@ -382,8 +395,12 @@ select.form-control { cursor: pointer; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .stat-num { font-size: 28px; }
   
-  .responsive-grid {
+  .responsive-grid, .responsive-grid-2-1 {
     grid-template-columns: 1fr !important;
+  }
+  
+  .hide-on-mobile {
+    display: none !important;
   }
   
   .auth-card { padding: 24px; }
@@ -391,7 +408,7 @@ select.form-control { cursor: pointer; }
 
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
-  .btn { width: 100%; justify-content: center; }
+  .btn:not(.btn-sm):not(td .btn) { width: 100%; justify-content: center; }
   .search-bar { flex-direction: column; }
   .tabs { width: 100%; overflow-x: auto; }
 }

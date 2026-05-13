@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Gadget, Booking
+from .models import Category, Gadget, Request, RequestItem, WaitingQueue
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -8,25 +8,24 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Gadget)
 class GadgetAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'quantity', 'is_active']
+    list_display = ['name', 'category', 'total_quantity', 'reserved_quantity', 'issued_quantity', 'is_active']
     list_filter = ['category', 'is_active']
     search_fields = ['name']
 
-@admin.register(Booking)
-class BookingAdmin(admin.ModelAdmin):
-    list_display = ['student', 'gadget', 'start_date', 'end_date', 'status', 'approved_by', 'requested_at']
-    list_filter = ['status', 'requested_at']
+class RequestItemInline(admin.TabularInline):
+    model = RequestItem
+    extra = 1
+
+@admin.register(Request)
+class RequestAdmin(admin.ModelAdmin):
+    list_display = ['id', 'student', 'status', 'expected_issue_date', 'expected_return_date', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['student__email']
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [RequestItemInline]
+
+@admin.register(WaitingQueue)
+class WaitingQueueAdmin(admin.ModelAdmin):
+    list_display = ['student', 'gadget', 'queue_position', 'notified', 'created_at']
+    list_filter = ['notified', 'gadget']
     search_fields = ['student__email', 'gadget__name']
-    readonly_fields = ['requested_at', 'updated_at', 'approved_by']
-    
-    def save_model(self, request, obj, form, change):
-        if change:
-            old_obj = Booking.objects.get(pk=obj.pk)
-            # Check if status was changed to approved
-            if old_obj.status != 'approved' and obj.status == 'approved':
-                obj.approved_by = request.user
-            # Check if status was changed to returned
-            if old_obj.status != 'returned' and obj.status == 'returned':
-                from django.utils import timezone
-                obj.returned_at = timezone.now()
-        super().save_model(request, obj, form, change)

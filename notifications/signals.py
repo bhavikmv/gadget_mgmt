@@ -1,10 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from gadgets.models import Booking
+from gadgets.models import Request
 from .tasks import send_notification_email_task
 
-@receiver(post_save, sender=Booking)
-def send_booking_notification(sender, instance, created, **kwargs):
+@receiver(post_save, sender=Request)
+def send_request_notification(sender, instance, created, **kwargs):
     """
     Trigger background email tasks via Celery.
     This ensures the web request returns instantly (under 200ms).

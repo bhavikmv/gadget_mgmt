@@ -17,6 +17,8 @@ urlpatterns = [
     path('admin-panel/requests/', views.admin_requests_view, name='admin_requests'),
     path('admin-panel/requests/<int:pk>/', views.admin_request_detail, name='admin_request_detail'),
     path('admin-panel/requests/<int:pk>/approve/', views.admin_approve_request, name='admin_approve'),
+    path('admin-panel/requests/<int:pk>/ready/', views.admin_mark_ready, name='admin_mark_ready'),
+    path('admin-panel/requests/<int:pk>/issue/', views.admin_issue_request, name='admin_issue'),
     path('admin-panel/requests/<int:pk>/reject/', views.admin_reject_request, name='admin_reject'),
     path('admin-panel/requests/<int:pk>/return/', views.admin_mark_returned, name='admin_return'),
     

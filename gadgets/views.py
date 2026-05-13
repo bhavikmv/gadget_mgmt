@@ -6,9 +6,10 @@ from django.http import JsonResponse
 from datetime import date, timedelta
 from django.utils import timezone
 from django.core.cache import cache
+from django.db import transaction
 
-from .models import Category, Gadget, Booking
-from .forms import CategoryForm, GadgetForm, BookingFormSet
+from .models import Category, Gadget, Request, RequestItem, WaitingQueue
+from .forms import CategoryForm, GadgetForm, RequestFormSet
 from accounts.models import Student
 from notifications.tasks import send_notification_email_task
 
@@ -18,7 +19,6 @@ def is_admin(user):
 try:
     from ratelimit.decorators import ratelimit
 except ImportError:
-    # Fallback decorator if ratelimit is not installed
     def ratelimit(key=None, rate=None, block=False):
         def decorator(func):
             return func
@@ -28,13 +28,17 @@ except ImportError:
 
 @login_required
 def dashboard_view(request):
-    bookings = Booking.objects.filter(student=request.user).select_related('gadget')
+    requests_list = Request.objects.filter(student=request.user).prefetch_related('items__gadget')
+    waiting_list = WaitingQueue.objects.filter(student=request.user).select_related('gadget')
+    
     context = {
-        'bookings': bookings,
-        'pending': bookings.filter(status='pending'),
-        'approved': bookings.filter(status='approved'),
-        'rejected': bookings.filter(status='rejected'),
-        'returned': bookings.filter(status='returned'),
+        'requests': requests_list,
+        'waiting_list': waiting_list,
+        'pending': requests_list.filter(status='pending'),
+        'approved': requests_list.filter(status='approved'),
+        'ready': requests_list.filter(status='ready'),
+        'issued': requests_list.filter(status='issued'),
+        'returned': requests_list.filter(status='returned'),
     }
     return render(request, 'student/dashboard.html', context)
 
@@ -43,46 +47,57 @@ def dashboard_view(request):
 def request_gadget_view(request):
     today = date.today()
     if request.method == 'POST':
-        formset = BookingFormSet(request.POST)
+        formset = RequestFormSet(request.POST)
         if formset.is_valid():
-            bookings_to_create = []
-            for form in formset:
-                if form.cleaned_data:
-                    gadget = form.cleaned_data['gadget']
-                    days = int(form.cleaned_data['days'])
-                    quantity = form.cleaned_data['quantity']
-                    start_date = today
-                    end_date = start_date + timedelta(days=days - 1)
-
-                    bookings_to_create.append(Booking(
-                        student=request.user,
-                        gadget=gadget,
-                        start_date=start_date,
-                        end_date=end_date,
-                        days=days,
-                        quantity=quantity,
-                        status='pending',
-                    ))
+            success_count = 0
+            waitlist_count = 0
             
-            if bookings_to_create:
-                created_bookings = Booking.objects.bulk_create(bookings_to_create)
-                created_bookings = Booking.objects.filter(
-                    student=request.user,
-                    requested_at__gte=timezone.now() - timedelta(seconds=5)
-                )
-
-                for booking in created_bookings:
-                    if booking.id:
-                        send_notification_email_task.delay(booking.id, 'placed')
+            with transaction.atomic():
+                for form in formset:
+                    if form.cleaned_data:
+                        gadget = form.cleaned_data['gadget']
+                        days = int(form.cleaned_data['days'])
+                        quantity = form.cleaned_data['quantity']
+                        join_waitlist = form.cleaned_data.get('join_waitlist', False)
+                        
+                        start_date = today
+                        end_date = start_date + timedelta(days=days - 1)
+                        
+                        # Lock the gadget row for update to prevent race conditions
+                        gadget = Gadget.objects.select_for_update().get(id=gadget.id)
+                        
+                        if gadget.available_quantity >= quantity:
+                            gadget.reserved_quantity += quantity
+                            gadget.save()
+                            
+                            req = Request.objects.create(
+                                student=request.user,
+                                status='pending',
+                                expected_return_date=end_date
+                            )
+                            RequestItem.objects.create(request=req, gadget=gadget, quantity=quantity)
+                            success_count += 1
+                        else:
+                            if join_waitlist:
+                                WaitingQueue.objects.create(
+                                    student=request.user,
+                                    gadget=gadget,
+                                    quantity=quantity
+                                )
+                                waitlist_count += 1
+                            else:
+                                messages.warning(request, f"Not enough stock for '{gadget.name}'. Please select 'Join waitlist' to reserve it in advance.")
                 
-                messages.success(request, f'{len(bookings_to_create)} request(s) submitted successfully!')
-                return redirect('dashboard')
-            else:
-                messages.warning(request, "Please select at least one gadget.")
+            if success_count > 0:
+                messages.success(request, f'{success_count} request(s) submitted successfully! Gadgets have been reserved.')
+            if waitlist_count > 0:
+                messages.info(request, f'You have been added to the waitlist for {waitlist_count} gadget(s).')
+                
+            return redirect('dashboard')
         else:
             messages.error(request, "There were errors in your request.")
     else:
-        formset = BookingFormSet()
+        formset = RequestFormSet()
 
     gadgets = Gadget.objects.filter(is_active=True)
     return render(request, 'student/request.html', {
@@ -107,43 +122,42 @@ def gadgets_view(request):
 def gadget_detail_api(request, gadget_id):
     try:
         gadget = Gadget.objects.get(id=gadget_id, is_active=True)
-        days = int(request.GET.get('days', 1))
-        start_date = date.today()
-        end_date = start_date + timedelta(days=days - 1)
-        available = gadget.available_quantity(start_date, end_date)
         return JsonResponse({
             'id': gadget.id,
             'name': gadget.name,
             'category': gadget.category.name if gadget.category else 'Uncategorized',
             'description': gadget.description,
-            'quantity': gadget.quantity,
-            'available': available,
-            'start_date': start_date.strftime('%d %b %Y'),
-            'end_date': end_date.strftime('%d %b %Y'),
+            'total_quantity': gadget.total_quantity,
+            'available': gadget.available_quantity,
+            'expected_return_date': gadget.expected_return_date.strftime('%d %b %Y') if gadget.expected_return_date else None,
+            'status': gadget.stock_status(),
         })
     except Gadget.DoesNotExist:
         return JsonResponse({'error': 'Gadget not found'}, status=404)
+
 
 # ─── ADMIN VIEWS ──────────────────────────────────────────────────────────────
 
 @user_passes_test(is_admin, login_url='/login/')
 def admin_dashboard_view(request):
-    pending = Booking.objects.filter(status='pending').count()
-    approved = Booking.objects.filter(status='approved').count()
+    pending = Request.objects.filter(status='pending').count()
+    approved = Request.objects.filter(status='approved').count()
+    ready = Request.objects.filter(status='ready').count()
     total_gadgets = Gadget.objects.filter(is_active=True).count()
     total_students = Student.objects.count()
     
-    overdue = Booking.objects.filter(
-        status='approved',
-        end_date__lt=date.today()
+    overdue = Request.objects.filter(
+        status='issued',
+        expected_return_date__lt=date.today()
     ).count()
 
-    recent_requests = Booking.objects.select_related('student', 'gadget').order_by('-requested_at')[:10]
+    recent_requests = Request.objects.select_related('student').prefetch_related('items__gadget').order_by('-created_at')[:10]
     gadgets = Gadget.objects.filter(is_active=True)
 
     context = {
         'pending': pending,
         'approved': approved,
+        'ready': ready,
         'total_gadgets': total_gadgets,
         'total_students': total_students,
         'overdue': overdue,
@@ -155,56 +169,120 @@ def admin_dashboard_view(request):
 @user_passes_test(is_admin, login_url='/login/')
 def admin_requests_view(request):
     status_filter = request.GET.get('status', '')
-    bookings = Booking.objects.select_related('student', 'gadget').all()
+    requests_list = Request.objects.select_related('student').prefetch_related('items__gadget').all()
     if status_filter:
-        bookings = bookings.filter(status=status_filter)
+        requests_list = requests_list.filter(status=status_filter)
     return render(request, 'admin_panel/requests.html', {
-        'bookings': bookings,
+        'requests': requests_list,
         'status_filter': status_filter,
     })
 
 @user_passes_test(is_admin, login_url='/login/')
 def admin_request_detail(request, pk):
-    booking = get_object_or_404(Booking, pk=pk)
-    return render(request, 'admin_panel/request_detail.html', {'booking': booking})
+    req = get_object_or_404(Request, pk=pk)
+    return render(request, 'admin_panel/request_detail.html', {'request': req})
 
+
+# --- STATUS CHANGE ACTIONS ---
 @user_passes_test(is_admin, login_url='/login/')
 def admin_approve_request(request, pk):
-    booking = get_object_or_404(Booking, pk=pk)
+    req = get_object_or_404(Request, pk=pk)
     if request.method == 'POST':
-        available = booking.gadget.available_quantity(booking.start_date, booking.end_date)
-        if booking.status == 'approved':
-            messages.info(request, 'This request is already approved.')
-            return redirect('admin_requests')
+        if req.status == 'pending':
+            req.status = 'approved'
+            req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
+            req.save()
+            messages.success(request, f'Request #{req.id} approved (Waiting for Issue).')
+        else:
+            messages.warning(request, 'Can only approve pending requests.')
+    return redirect('admin_requests')
 
-        if available < booking.quantity:
-            messages.error(request, 'Cannot approve: not enough units available for the selected dates.')
-            return redirect('admin_requests')
-        
-        booking.status = 'approved'
-        booking.approved_by = request.user
-        booking.admin_notes = request.POST.get('admin_notes', '')
-        booking.save()
-        messages.success(request, f'Booking #{booking.id} approved and stock updated!')
+@user_passes_test(is_admin, login_url='/login/')
+def admin_mark_ready(request, pk):
+    req = get_object_or_404(Request, pk=pk)
+    if request.method == 'POST':
+        if req.status == 'approved':
+            req.status = 'ready'
+            req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
+            req.save()
+            messages.success(request, f'Request #{req.id} marked as Ready for Pickup.')
+        else:
+            messages.warning(request, 'Can only mark approved requests as ready.')
+    return redirect('admin_requests')
+
+@user_passes_test(is_admin, login_url='/login/')
+def admin_issue_request(request, pk):
+    req = get_object_or_404(Request, pk=pk)
+    if request.method == 'POST':
+        if req.status in ['approved', 'ready']:
+            with transaction.atomic():
+                req.status = 'issued'
+                req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
+                req.save()
+                
+                # Update quantities: reserved -> issued
+                for item in req.items.all():
+                    gadget = Gadget.objects.select_for_update().get(id=item.gadget.id)
+                    gadget.reserved_quantity -= item.quantity
+                    gadget.issued_quantity += item.quantity
+                    gadget.save()
+                    
+            messages.success(request, f'Request #{req.id} issued. Stock updated.')
+        else:
+            messages.warning(request, 'Can only issue approved or ready requests.')
     return redirect('admin_requests')
 
 @user_passes_test(is_admin, login_url='/login/')
 def admin_reject_request(request, pk):
-    booking = get_object_or_404(Booking, pk=pk)
+    req = get_object_or_404(Request, pk=pk)
     if request.method == 'POST':
-        booking.status = 'rejected'
-        booking.admin_notes = request.POST.get('admin_notes', '')
-        booking.save()
-        messages.success(request, f'Booking #{booking.id} rejected.')
+        if req.status in ['pending', 'approved', 'ready']:
+            with transaction.atomic():
+                req.status = 'rejected'
+                req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
+                req.save()
+                
+                # Restore reserved quantity
+                for item in req.items.all():
+                    gadget = Gadget.objects.select_for_update().get(id=item.gadget.id)
+                    gadget.reserved_quantity -= item.quantity
+                    gadget.save()
+                    
+            messages.success(request, f'Request #{req.id} rejected. Reserved stock restored.')
+        else:
+            messages.warning(request, 'Cannot reject an already issued or returned request.')
     return redirect('admin_requests')
 
 @user_passes_test(is_admin, login_url='/login/')
 def admin_mark_returned(request, pk):
-    booking = get_object_or_404(Booking, pk=pk)
+    req = get_object_or_404(Request, pk=pk)
     if request.method == 'POST':
-        booking.mark_returned()
-        messages.success(request, f'Booking #{booking.id} marked as returned.')
+        if req.status == 'issued':
+            with transaction.atomic():
+                req.status = 'returned'
+                req.save()
+                
+                for item in req.items.all():
+                    gadget = Gadget.objects.select_for_update().get(id=item.gadget.id)
+                    gadget.issued_quantity -= item.quantity
+                    gadget.save()
+                    
+                    # Notify waitlist if there's someone waiting
+                    waitlist_entries = WaitingQueue.objects.filter(gadget=gadget, notified=False).order_by('queue_position')
+                    for queue in waitlist_entries:
+                        if gadget.available_quantity >= queue.quantity:
+                            # Here we could send an email notification
+                            queue.notified = True
+                            queue.save()
+                            break # Notify next person who fits
+                            
+            messages.success(request, f'Request #{req.id} marked as returned. Stock restored.')
+        else:
+            messages.warning(request, 'Can only return issued requests.')
     return redirect('admin_requests')
+
+
+# ─── ADMIN GADGET & CATEGORY VIEWS ──────────────────────────────────────────────
 
 @user_passes_test(is_admin, login_url='/login/')
 def admin_gadgets_view(request):

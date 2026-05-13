@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
-{% block title %}Request Details #{{ booking.id }} – GadgetMS{% endblock %}
+{% block title %}Request Details #{{ request.id }} – GadgetMS{% endblock %}
 {% block nav_admin_reqs %}active{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
     <a href="{% url 'admin_requests' %}" class="btn btn-ghost" style="padding:4px 8px;">← Back</a>
-    <span style="color:var(--text2);">Request Management / #{{ booking.id }}</span>
+    <span style="color:var(--text2);">Request Management / #{{ request.id }}</span>
   </div>
   <h1>Request Details</h1>
 </div>
 
-<div style="display:grid;grid-template-columns: 2fr 1fr; gap:24px; align-items: start;">
+<div class="responsive-grid-2-1">
   
   <div style="display:flex;flex-direction:column;gap:24px;">
     
@@ -19,46 +19,43 @@
     <div class="card">
       <div class="flex-between" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);">
         <h2 style="font-size:18px;font-weight:700;">General Information</h2>
-        <span class="badge badge-{{ booking.status }}" style="font-size:14px;padding:6px 12px;">{{ booking.get_status_display|upper }}</span>
+        <span class="badge badge-{{ request.status }}" style="font-size:14px;padding:6px 12px;">{{ request.get_status_display|upper }}</span>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-        <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">Gadget Requested</label>
-          <div style="font-size:18px;font-weight:700;color:var(--accent);margin-top:4px;">{{ booking.gadget.name }}</div>
-          <div style="color:var(--text2);font-size:13px;margin-top:2px;">{{ booking.gadget.category.name|default:"Uncategorized" }}</div>
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text2);">Requested Items</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for item in request.items.all %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;">
+          <div>
+            <div style="font-weight:700;font-size:16px;">{{ item.gadget.name }}</div>
+            <div style="color:var(--text2);font-size:13px;">{{ item.gadget.category.name|default:"Uncategorized" }}</div>
+          </div>
+          <div style="font-size:18px;font-weight:700;">{{ item.quantity }}x</div>
         </div>
-        <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">Quantity</label>
-          <div style="font-size:18px;font-weight:700;margin-top:4px;">{{ booking.quantity }} unit{{ booking.quantity|pluralize }}</div>
-        </div>
+        {% endfor %}
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:32px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px;">
         <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">Start Date</label>
-          <div style="font-weight:600;margin-top:4px;">{{ booking.start_date|date:"d F Y" }}</div>
+          <label class="form-label" style="opacity:0.6;font-size:12px;">Expected Issue Date</label>
+          <div style="font-weight:600;margin-top:4px;">{{ request.expected_issue_date|date:"d F Y"|default:"Not specified" }}</div>
         </div>
         <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">End Date</label>
-          <div style="font-weight:600;margin-top:4px;">{{ booking.end_date|date:"d F Y" }}</div>
-        </div>
-        <div>
-          <label class="form-label" style="opacity:0.6;font-size:12px;">Duration</label>
-          <div style="font-weight:600;margin-top:4px;">{{ booking.days }} day{{ booking.days|pluralize }}</div>
+          <label class="form-label" style="opacity:0.6;font-size:12px;">Expected Return Date</label>
+          <div style="font-weight:600;margin-top:4px;">{{ request.expected_return_date|date:"d F Y" }}</div>
         </div>
       </div>
 
-      {% if booking.admin_notes %}
+      {% if request.admin_notes %}
       <div style="margin-top:32px;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:4px solid var(--accent);">
         <label class="form-label" style="opacity:0.6;font-size:12px;margin-bottom:8px;display:block;">Admin Notes</label>
-        <p style="font-size:14px;line-height:1.6;margin:0;">{{ booking.admin_notes }}</p>
+        <p style="font-size:14px;line-height:1.6;margin:0;">{{ request.admin_notes }}</p>
       </div>
       {% endif %}
     </div>
 
     <!-- ACTION CARD -->
-    {% if booking.status == 'pending' %}
+    {% if request.status == 'pending' %}
     <div class="card" style="border: 1px solid var(--accent);">
       <h3 style="margin-bottom:16px;">Decision Actions</h3>
       <form method="post" style="display:flex;flex-direction:column;gap:16px;">
@@ -68,16 +65,35 @@
           <textarea name="admin_notes" class="form-control" rows="3" placeholder="Add a note for the student..."></textarea>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <button type="submit" formaction="{% url 'admin_approve' booking.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">Approve Request</button>
-          <button type="submit" formaction="{% url 'admin_reject' booking.id %}" class="btn btn-danger" style="justify-content:center;padding:12px;">Reject Request</button>
+          <button type="submit" formaction="{% url 'admin_approve' request.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">Approve Request</button>
+          <button type="submit" formaction="{% url 'admin_reject' request.id %}" class="btn btn-danger" style="justify-content:center;padding:12px;">Reject Request</button>
         </div>
       </form>
     </div>
-    {% elif booking.status == 'approved' %}
+    {% elif request.status == 'approved' %}
+    <div class="card" style="border: 1px solid var(--warning);">
+      <h3 style="margin-bottom:16px;">Next Action</h3>
+      <p style="color:var(--text2);margin-bottom:16px;">The request is approved. You can mark it as ready for pickup or issue it directly.</p>
+      <form method="post" style="display:flex;flex-direction:column;gap:12px;">
+        {% csrf_token %}
+        <button type="submit" formaction="{% url 'admin_mark_ready' request.id %}" class="btn btn-primary" style="justify-content:center;padding:12px;">Mark as Ready for Pickup</button>
+        <button type="submit" formaction="{% url 'admin_issue' request.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">Issue to Student</button>
+      </form>
+    </div>
+    {% elif request.status == 'ready' %}
+    <div class="card" style="border: 1px solid var(--success);">
+      <h3 style="margin-bottom:16px;">Next Action</h3>
+      <p style="color:var(--text2);margin-bottom:16px;">The gadget is ready. Hand it over to the student and click Issue.</p>
+      <form method="post" action="{% url 'admin_issue' request.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success" style="width:100%;justify-content:center;padding:12px;">Issue to Student</button>
+      </form>
+    </div>
+    {% elif request.status == 'issued' %}
     <div class="card" style="border: 1px solid var(--warning);">
       <h3 style="margin-bottom:16px;">Return Action</h3>
       <p style="color:var(--text2);margin-bottom:16px;">Mark this gadget as returned once the student hands it back to the IT lab.</p>
-      <form method="post" action="{% url 'admin_return' booking.id %}">
+      <form method="post" action="{% url 'admin_return' request.id %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-warning" style="width:100%;justify-content:center;padding:12px;">Mark as Returned</button>
       </form>
@@ -93,25 +109,16 @@
       <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Student Details</h3>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
         <div style="width:48px;height:48px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:white;">
-          {{ booking.student.first_name|first }}{{ booking.student.last_name|first }}
+          {{ request.student.first_name|first }}{{ request.student.last_name|first }}
         </div>
         <div>
-          <div style="font-weight:700;font-size:16px;">{{ booking.student.get_full_name }}</div>
-          <div style="font-size:13px;color:var(--text2);">{{ booking.student.email }}</div>
+          <div style="font-weight:700;font-size:16px;">{{ request.student.get_full_name }}</div>
+          <div style="font-size:13px;color:var(--text2);">{{ request.student.email }}</div>
         </div>
       </div>
-      <div class="info-row"><span>GR Number</span><span style="font-weight:600;">{{ booking.student.student_profile.gr_number }}</span></div>
-      <div class="info-row"><span>Phone</span><span>{{ booking.student.student_profile.phone|default:"–" }}</span></div>
+      <div class="info-row"><span>GR Number</span><span style="font-weight:600;">{{ request.student.student_profile.gr_number }}</span></div>
+      <div class="info-row"><span>Phone</span><span>{{ request.student.student_profile.phone|default:"–" }}</span></div>
     </div>
-
-    <!-- GADGET STATUS CARD -->
-    <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Gadget Status</h3>
-      <div class="info-row"><span>Current Stock</span><span style="font-weight:600;">{{ booking.gadget.quantity }}</span></div>
-      <div class="info-row"><span>Total Active Loans</span><span style="font-weight:600;">{{ booking.gadget.bookings.all.count }}</span></div>
-      <a href="{% url 'admin_gadget_edit' booking.gadget.id %}" class="btn btn-ghost btn-sm" style="margin-top:12px;width:100%;justify-content:center;">Edit Gadget Information</a>
-    </div>
-
   </div>
 
 </div>
