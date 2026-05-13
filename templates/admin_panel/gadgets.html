@@ -94,7 +94,7 @@
             <form method="post" action="{% url 'admin_gadget_delete' stat.gadget.id %}" style="display:inline;"
                   onsubmit="return confirm('Deactivate {{ stat.gadget.name }}?')">
               {% csrf_token %}
-              <button class="btn btn-danger btn-sm">Deactivate</button>
+              <button class="btn btn-danger mr-2 mt-4 btn-sm">Deactivate</button>
             </form>
             {% endif %}
           </td>
