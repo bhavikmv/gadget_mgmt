@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.db import transaction
 
 from .models import Category, Gadget, Request, RequestItem, WaitingQueue
-from .forms import CategoryForm, GadgetForm, RequestForm, WaitlistForm
+from .forms import CategoryForm, GadgetForm, RequestForm, RequestFormSet, WaitlistForm
 from .services import (
     calculate_next_available_date,
     calculate_queue_estimated_date,
