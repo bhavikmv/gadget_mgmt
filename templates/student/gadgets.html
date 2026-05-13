@@ -101,15 +101,19 @@
 
     <!-- Icon -->
     <div class="gadget-icon-wrap">
-      {% with cat=stat.gadget.category.name|lower %}
-        {% if cat == 'laptop' %}💻
-        {% elif cat == 'tablet' %}📱
-        {% elif cat == 'camera' %}📷
-        {% elif cat == 'projector' %}📽️
-        {% elif cat == 'drone' or cat == 'dron' %}🚁
-        {% elif cat == 'pump' %}🔩
-        {% else %}🔧{% endif %}
-      {% endwith %}
+      {% if stat.gadget.image %}
+        <img src="{{ stat.gadget.image.url }}" alt="{{ stat.gadget.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+      {% else %}
+        {% with cat=stat.gadget.category.name|lower %}
+          {% if cat == 'laptop' %}💻
+          {% elif cat == 'tablet' %}📱
+          {% elif cat == 'camera' %}📷
+          {% elif cat == 'projector' %}📽️
+          {% elif cat == 'drone' or cat == 'dron' %}🚁
+          {% elif cat == 'pump' %}🔩
+          {% else %}🔧{% endif %}
+        {% endwith %}
+      {% endif %}
     </div>
 
     <div class="gadget-title">{{ stat.gadget.name }}</div>
