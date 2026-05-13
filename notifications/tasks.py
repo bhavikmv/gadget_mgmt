@@ -59,3 +59,29 @@ def send_notification_email_task(self, booking_id, email_type):
         
         # Retry for network errors in background worker
         raise self.retry(exc=exc)
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_otp_email_task(self, email, otp):
+    try:
+        logger.info(f"Sending OTP to {email}")
+        subject = 'Verify Your Account - OTP'
+        context = {'otp': otp}
+        html_message = render_to_string('notifications/emails/otp_email.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject,
+            plain_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        logger.info(f"OTP sent successfully to {email}")
+        return f"OTP sent to {email}"
+    except Exception as exc:
+        logger.error(f"Error sending OTP email: {exc}")
+        if self.request.is_eager:
+            logger.warning("Eager mode detected, skipping retry to avoid blocking.")
+            return f"Failed to send email in eager mode: {exc}"
+        raise self.retry(exc=exc)

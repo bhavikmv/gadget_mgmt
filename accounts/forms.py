@@ -20,6 +20,7 @@ class StudentRegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.username = self.cleaned_data['email']
+        user.is_active = False  # Set user to inactive until OTP verification
         if commit:
             user.save()
             # Create the linked student profile

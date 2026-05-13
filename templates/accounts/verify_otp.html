@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verify OTP – GadgetMS</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>⚙️ GadgetMS</h1>
+      <p>Verify Your Email</p>
+    </div>
+    <h2 class="auth-title">Enter OTP</h2>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" style="margin-bottom:12px;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <p style="text-align:center; color:var(--text2); margin-bottom:20px; font-size:14px;">
+      An OTP has been sent to <strong>{{ email }}</strong>.
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">6-Digit OTP</label>
+        <input type="text" name="otp" class="form-control" placeholder="123456" required autofocus autocomplete="off" maxlength="6" pattern="\d{6}">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;">Verify Account</button>
+    </form>
+    
+    <p style="text-align:center;margin-top:20px;color:var(--text2);font-size:14px;">
+      Didn't receive the email? <a href="{% url 'resend_otp' %}" style="color:var(--accent);">Resend OTP</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>
