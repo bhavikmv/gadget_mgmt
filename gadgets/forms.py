@@ -43,22 +43,22 @@ class RequestForm(forms.Form):
             'min': '1',
         }),
     )
-    join_waitlist = forms.BooleanField(
-        required=False,
-        label='Join waitlist if stock is unavailable',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'join-waitlist'}),
-    )
 
     def clean(self):
         cleaned = super().clean()
         gadget = cleaned.get('gadget')
         quantity = cleaned.get('quantity')
-        join_waitlist = cleaned.get('join_waitlist', False)
 
         if gadget and quantity:
             if quantity > gadget.total_quantity:
                 raise forms.ValidationError(
-                    f'Requested quantity ({quantity}) exceeds total stock ({gadget.total_quantity}).'
+                    f'Quantity ({quantity}) exceeds total stock ({gadget.total_quantity}) for "{gadget.name}".'
+                )
+            if gadget.available_quantity < quantity:
+                raise forms.ValidationError(
+                    f'Not enough stock for "{gadget.name}". '
+                    f'Available: {gadget.available_quantity}, you requested: {quantity}. '
+                    f'Please try again when stock is replenished.'
                 )
         return cleaned
 

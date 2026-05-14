@@ -102,12 +102,7 @@
             </div>
           </div>
 
-          <div class="form-group" style="margin-top:16px;">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
-              {{ form.join_waitlist }}
-              <span>{{ form.join_waitlist.label }}</span>
-            </label>
-          </div>
+
         </div>
         {% endfor %}
       </div>
@@ -131,8 +126,8 @@
       <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📋 Request Rules</h3>
       <ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2;">
         <li>✅ Max duration: <strong style="color:var(--text)">30 days</strong></li>
-        <li>✅ Stock checked in real-time</li>
-        <li>✅ Join waitlist if out of stock</li>
+        <li>✅ Stock checked before submission</li>
+        <li>✅ Request blocked if stock is insufficient</li>
         <li>✅ All requests reviewed by admin</li>
         <li>⚠️ Return on or before the end date</li>
         <li>📋 <strong>Approved ≠ Issued</strong></li>
@@ -140,27 +135,27 @@
     </div>
 
     <div class="card" style="font-size:13px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📊 Status Guide</h3>
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📊 Status Flow</h3>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge badge-pending" style="font-size:11px;">Pending Review</span>
-          <span style="color:var(--text2);">Awaiting admin action</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge" style="background:#7c3aed;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;">Waiting List</span>
-          <span style="color:var(--text2);">In queue for stock</span>
+          <span class="badge badge-pending" style="font-size:11px;">Pending</span>
+          <span style="color:var(--text2);">→ Awaiting admin review</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="badge badge-approved" style="font-size:11px;">Approved</span>
-          <span style="color:var(--text2);">Permission granted</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge badge-ready" style="font-size:11px;">Ready for Pickup</span>
-          <span style="color:var(--text2);">Come collect it</span>
+          <span style="color:var(--text2);">→ Admin approved it</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="badge badge-issued" style="font-size:11px;">Issued</span>
-          <span style="color:var(--text2);">Physically in your hands</span>
+          <span style="color:var(--text2);">→ Gadget in your hands</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-returned" style="font-size:11px;">Returned</span>
+          <span style="color:var(--text2);">→ Gadget handed back</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-rejected" style="font-size:11px;">Rejected</span>
+          <span style="color:var(--text2);">→ Request declined</span>
         </div>
       </div>
     </div>
