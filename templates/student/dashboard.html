@@ -183,6 +183,7 @@
   </div>
 
   <!-- Mobile Cards -->
+  <div class="mobile-card-slider">
   {% for r in requests %}
   <div class="req-mobile-card">
     <div class="req-card-top">
@@ -204,6 +205,51 @@
     </div>
   </div>
   {% endfor %}
+  </div>
+
+  <!-- Pagination Controls -->
+  <div id="pagination" class="pagination"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const itemsPerPage = 10;
+      const tableRows = document.querySelectorAll('.req-desktop-table tbody tr');
+      const mobileCards = document.querySelectorAll('.mobile-card-slider .req-mobile-card');
+      const totalItems = Math.max(tableRows.length, mobileCards.length);
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const paginationContainer = document.getElementById('pagination');
+      
+      function showPage(page) {
+        // Table
+        tableRows.forEach((row, index) => {
+          row.style.display = (index >= (page - 1) * itemsPerPage && index < page * itemsPerPage) ? '' : 'none';
+        });
+        
+        // Cards
+        mobileCards.forEach((card, index) => {
+          card.style.display = (index >= (page - 1) * itemsPerPage && index < page * itemsPerPage) ? 'block' : 'none';
+        });
+        
+        // Update buttons
+        document.querySelectorAll('.pagination-btn').forEach(btn => {
+          btn.classList.toggle('active', parseInt(btn.dataset.page) === page);
+        });
+      }
+      
+      if (totalPages > 1) {
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement('button');
+          btn.className = 'pagination-btn';
+          btn.textContent = i;
+          btn.dataset.page = i;
+          btn.addEventListener('click', () => showPage(i));
+          paginationContainer.appendChild(btn);
+        }
+        showPage(1);
+      }
+    });
+  </script>
+
 
   {% else %}
   <div class="empty-state">
