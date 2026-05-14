@@ -136,6 +136,50 @@
   {% endfor %}
 </div>
 {% endif %}
+<!-- Gadget Inventory -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="flex-between" style="margin-bottom:16px;">
+    <h2 style="font-size:16px;font-weight:700;">Gadget Inventory</h2>
+    <a href="{% url 'gadgets' %}" class="btn btn-ghost btn-sm">Browse All →</a>
+  </div>
+  <div style="display:flex;overflow-x:auto;gap:12px;padding-bottom:12px;-webkit-overflow-scrolling:touch;">
+    {% for g in gadgets %}
+    <div style="flex:0 0 160px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        {% if g.image %}
+          <img src="{{ g.image.url }}" alt="{{ g.name }}" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">
+        {% else %}
+          <div style="width:28px;height:28px;background:rgba(0,0,0,0.06);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🔧</div>
+        {% endif %}
+        <div>
+          <div style="font-weight:700;font-size:13px;line-height:1.2;">{{ g.name }}</div>
+          <div style="font-size:11px;color:var(--text2);">{{ g.category.name|default:"Uncategorized" }}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
+          <div style="color:var(--text2);">Available</div>
+          <div style="font-weight:700;color:#4ade80;font-size:14px;">{{ g.available_quantity }}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
+          <div style="color:var(--text2);">Total</div>
+          <div style="font-weight:700;font-size:14px;">{{ g.total_quantity }}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
+          <div style="color:var(--text2);">Reserved</div>
+          <div style="font-weight:700;color:#facc15;font-size:14px;">{{ g.reserved_quantity }}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
+          <div style="color:var(--text2);">Issued</div>
+          <div style="font-weight:700;color:#f87171;font-size:14px;">{{ g.issued_quantity }}</div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p style="color:var(--text2);">No gadgets yet.</p>
+    {% endfor %}
+  </div>
+</div>
 
 <!-- All Requests Section -->
 <div class="card">
@@ -186,19 +230,22 @@
   <div class="mobile-card-slider">
   {% for r in requests %}
   <div class="req-mobile-card">
-    <div class="req-card-top">
-      <div class="req-card-gadgets">
-        {% for item in r.items.all %}
-          {{ item.quantity }}× {{ item.gadget.name }}{% if not forloop.last %},{% endif %}
-        {% endfor %}
+    <div class="req-card-top" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:700; color:var(--accent);">#{{ r.id }}</div>
       </div>
       <div style="flex-shrink:0;">
         <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
         {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
       </div>
     </div>
-    <div class="req-card-dates">
-      <span>📅 Req: {{ r.created_at|date:"d M Y" }}</span>
+    <div class="req-card-items" style="margin-top:10px; margin-bottom:10px; font-size:14px;">
+      {% for item in r.items.all %}
+        📦 {{ item.quantity }}× {{ item.gadget.name }}<br>
+      {% endfor %}
+    </div>
+    <div class="req-card-dates" style="font-size:12px; color:var(--text2); display:flex; flex-direction:column; gap:4px;">
+      <span>📅 Requested: {{ r.created_at|date:"d M Y" }}</span>
       {% if r.expected_return_date %}<span>🔙 Return by: {{ r.expected_return_date|date:"d M Y" }}</span>{% endif %}
       {% if r.issue_date %}<span style="color:#4ade80;">✅ Issued: {{ r.issue_date|date:"d M Y" }}</span>{% endif %}
       {% if r.return_date %}<span style="color:#facc15;">🔄 Returned: {{ r.return_date|date:"d M Y" }}</span>{% endif %}

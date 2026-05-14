@@ -63,10 +63,13 @@ def dashboard_view(request):
             'estimated_date': est,
         })
 
+    gadgets = Gadget.objects.filter(is_active=True)
+
     context = {
         'requests': requests_list,
         'waiting_list': waiting_list,
         'enriched_waiting': enriched_waiting,
+        'gadgets': gadgets,
         'pending': requests_list.filter(status='pending'),
         'waitlisted': requests_list.filter(status='waitlisted'),
         'approved': requests_list.filter(status='approved'),
