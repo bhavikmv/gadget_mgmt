@@ -11,6 +11,26 @@
   .badge-issued     { background:#065f46;color:#a7f3d0; }
   .badge-rejected   { background:#7f1d1d;color:#fecaca; }
   .badge-returned   { background:#374151;color:#d1d5db; }
+
+  /* Mobile request card for recent requests */
+  .req-mobile-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: none;
+  }
+  .req-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; }
+  .req-card-student { font-weight:700; font-size:14px; }
+  .req-card-gr { font-size:12px; color:var(--text2); }
+  .req-card-items { font-size:13px; margin-bottom:8px; }
+  .req-card-dates { font-size:12px; color:var(--text2); margin-bottom:10px; }
+
+  @media (max-width: 768px) {
+    .req-mobile-card { display: block; }
+    .req-desktop-table { display: none; }
+  }
 </style>
 
 <div class="page-header">
@@ -19,14 +39,14 @@
 </div>
 
 <!-- Stats -->
-<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:28px;">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:24px;">
   <div class="stat-card pending">
     <div class="stat-icon">⏳</div>
     <div><div class="stat-num">{{ pending }}</div><div class="stat-label">Pending Review</div></div>
   </div>
   <div class="stat-card" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);">
     <div class="stat-icon">📋</div>
-    <div><div class="stat-num">{{ waitlisted_count }}</div><div class="stat-label">In Waiting Queue</div></div>
+    <div><div class="stat-num">{{ waitlisted_count }}</div><div class="stat-label">In Queue</div></div>
   </div>
   <div class="stat-card approved">
     <div class="stat-icon">🕒</div>
@@ -34,15 +54,15 @@
   </div>
   <div class="stat-card ready">
     <div class="stat-icon">📦</div>
-    <div><div class="stat-num">{{ ready }}</div><div class="stat-label">Ready for Pickup</div></div>
+    <div><div class="stat-num">{{ ready }}</div><div class="stat-label">Ready</div></div>
   </div>
   <div class="stat-card" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);">
     <div class="stat-icon">⚠️</div>
-    <div><div class="stat-num">{{ overdue }}</div><div class="stat-label">Overdue Returns</div></div>
+    <div><div class="stat-num">{{ overdue }}</div><div class="stat-label">Overdue</div></div>
   </div>
   <div class="stat-card" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);">
     <div class="stat-icon">🔧</div>
-    <div><div class="stat-num">{{ total_gadgets }}</div><div class="stat-label">Active Gadgets</div></div>
+    <div><div class="stat-num">{{ total_gadgets }}</div><div class="stat-label">Gadgets</div></div>
   </div>
   <div class="stat-card" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);">
     <div class="stat-icon">🎓</div>
@@ -51,48 +71,48 @@
 </div>
 
 <!-- Quick links -->
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;">
+<div class="quick-actions">
   <a href="{% url 'admin_waiting_queue' %}" class="btn btn-primary">📋 Manage Queue</a>
-  <a href="{% url 'admin_requests' %}?status=pending" class="btn btn-ghost">⏳ Pending Requests</a>
+  <a href="{% url 'admin_requests' %}?status=pending" class="btn btn-ghost">⏳ Pending</a>
   <a href="{% url 'admin_gadget_add' %}" class="btn btn-ghost">+ Add Gadget</a>
 </div>
 
 <!-- Gadget Inventory -->
-<div class="card" style="margin-bottom:28px;">
+<div class="card" style="margin-bottom:24px;">
   <div class="flex-between" style="margin-bottom:16px;">
     <h2 style="font-size:16px;font-weight:700;">Gadget Inventory</h2>
     <a href="{% url 'admin_gadgets' %}" class="btn btn-ghost btn-sm">Manage →</a>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
     {% for g in gadgets %}
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         {% if g.image %}
-          <img src="{{ g.image.url }}" alt="{{ g.name }}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;">
+          <img src="{{ g.image.url }}" alt="{{ g.name }}" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">
         {% else %}
-          <div style="width:32px;height:32px;background:rgba(255,255,255,0.05);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;">🔧</div>
+          <div style="width:28px;height:28px;background:rgba(0,0,0,0.06);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🔧</div>
         {% endif %}
         <div>
-          <div style="font-weight:700;font-size:14px;">{{ g.name }}</div>
-          <div style="font-size:12px;color:var(--text2);">{{ g.category.name|default:"Uncategorized" }}</div>
+          <div style="font-weight:700;font-size:13px;line-height:1.2;">{{ g.name }}</div>
+          <div style="font-size:11px;color:var(--text2);">{{ g.category.name|default:"Uncategorized" }}</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
-        <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:6px;text-align:center;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
           <div style="color:var(--text2);">Available</div>
-          <div style="font-weight:700;color:#4ade80;font-size:16px;">{{ g.available_quantity }}</div>
+          <div style="font-weight:700;color:#4ade80;font-size:14px;">{{ g.available_quantity }}</div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:6px;text-align:center;">
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
           <div style="color:var(--text2);">Total</div>
-          <div style="font-weight:700;font-size:16px;">{{ g.total_quantity }}</div>
+          <div style="font-weight:700;font-size:14px;">{{ g.total_quantity }}</div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:6px;text-align:center;">
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
           <div style="color:var(--text2);">Reserved</div>
-          <div style="font-weight:700;color:#facc15;">{{ g.reserved_quantity }}</div>
+          <div style="font-weight:700;color:#facc15;font-size:14px;">{{ g.reserved_quantity }}</div>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:6px;text-align:center;">
+        <div style="background:rgba(0,0,0,0.04);border-radius:6px;padding:5px;text-align:center;">
           <div style="color:var(--text2);">Issued</div>
-          <div style="font-weight:700;color:#f87171;">{{ g.issued_quantity }}</div>
+          <div style="font-weight:700;color:#f87171;font-size:14px;">{{ g.issued_quantity }}</div>
         </div>
       </div>
     </div>
@@ -109,15 +129,16 @@
     <a href="{% url 'admin_requests' %}" class="btn btn-ghost btn-sm">View All →</a>
   </div>
   {% if recent_requests %}
-  <div class="table-wrap">
+
+  <!-- Desktop Table -->
+  <div class="table-wrap req-desktop-table">
     <table>
       <thead>
         <tr>
-          <th class="hide-on-mobile">#</th>
+          <th>#</th>
           <th>Student</th>
           <th>Items</th>
-          <th class="hide-on-mobile">Expected Dates</th>
-          <th class="hide-on-mobile">Actual Dates</th>
+          <th>Expected Return</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -125,7 +146,7 @@
       <tbody>
         {% for r in recent_requests %}
         <tr>
-          <td class="hide-on-mobile" style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</td>
           <td>
             <strong>{{ r.student.get_full_name }}</strong><br>
             <span style="font-size:12px;color:var(--text2);">{{ r.student.student_profile.gr_number }}</span>
@@ -135,13 +156,8 @@
               <div style="font-size:13px;">{{ item.quantity }}× {{ item.gadget.name }}</div>
             {% endfor %}
           </td>
-          <td class="hide-on-mobile" style="font-size:12px;">
-            {{ r.expected_issue_date|date:"d M"|default:"–" }} → {{ r.expected_return_date|date:"d M Y"|default:"–" }}
-          </td>
-          <td class="hide-on-mobile" style="font-size:12px;">
-            {% if r.issue_date %}<span style="color:#4ade80;">{{ r.issue_date|date:"d M" }}</span>{% else %}–{% endif %}
-            →
-            {% if r.return_date %}<span style="color:#facc15;">{{ r.return_date|date:"d M Y" }}</span>{% else %}–{% endif %}
+          <td style="font-size:12px;white-space:nowrap;">
+            {{ r.expected_return_date|date:"d M Y"|default:"–" }}
           </td>
           <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
           <td>
@@ -152,6 +168,29 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Mobile Cards -->
+  {% for r in recent_requests %}
+  <div class="req-mobile-card">
+    <div class="req-card-top">
+      <div>
+        <div class="req-card-student">{{ r.student.get_full_name }}</div>
+        <div class="req-card-gr">{{ r.student.student_profile.gr_number }} · #{{ r.id }}</div>
+      </div>
+      <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+    </div>
+    <div class="req-card-items">
+      {% for item in r.items.all %}
+        📦 {{ item.quantity }}× {{ item.gadget.name }}<br>
+      {% endfor %}
+    </div>
+    <div class="req-card-dates">
+      {% if r.expected_return_date %}🔙 Return by: {{ r.expected_return_date|date:"d M Y" }}{% endif %}
+    </div>
+    <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">View Details</a>
+  </div>
+  {% endfor %}
+
   {% else %}
   <div class="empty-state"><div class="icon">📋</div><p>No requests yet.</p></div>
   {% endif %}

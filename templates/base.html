@@ -99,17 +99,48 @@
   const overlay = document.getElementById('sidebar-overlay');
   const toggle = document.getElementById('menu-toggle');
 
+  function openSidebar() {
+    sidebar.classList.add('active');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
   if (toggle) {
     toggle.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
+      if (sidebar.classList.contains('active')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
     });
   }
 
   if (overlay) {
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-    });
+    overlay.addEventListener('click', closeSidebar);
   }
+
+  // Close sidebar when a nav link is tapped on mobile
+  const navLinks = document.querySelectorAll('.nav-item');
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 992) closeSidebar();
+    });
+  });
+
+  // Auto-dismiss alerts after 5 seconds
+  document.querySelectorAll('.alert').forEach(el => {
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.4s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 400);
+    }, 5000);
+  });
 </script>
 </body>
 </html>

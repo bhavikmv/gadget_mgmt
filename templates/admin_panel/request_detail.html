@@ -38,6 +38,15 @@
     background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
     border-radius:8px;padding:12px 16px;color:#f87171;font-size:13px;margin-bottom:12px;
   }
+  .action-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 480px) {
+    .action-grid-2 { grid-template-columns: 1fr; }
+    .page-header > div { flex-wrap: wrap; }
+  }
 </style>
 
 <div class="page-header">
@@ -130,7 +139,7 @@
           <label class="form-label">Review Notes (Optional)</label>
           <textarea name="admin_notes" class="form-control" rows="3" placeholder="Add a note for the student…"></textarea>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="action-grid-2">
           <button formaction="{% url 'admin_approve' req.id %}" class="btn btn-success" style="justify-content:center;padding:12px;">✅ Approve</button>
           <button formaction="{% url 'admin_reject' req.id %}"  class="btn btn-danger"  style="justify-content:center;padding:12px;">❌ Reject</button>
         </div>
@@ -152,7 +161,7 @@
           <label class="form-label">Admin Notes</label>
           <textarea name="admin_notes" class="form-control" rows="2">{{ req.admin_notes }}</textarea>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="action-grid-2">
           <button formaction="{% url 'admin_mark_ready' req.id %}" class="btn btn-primary" style="justify-content:center;padding:12px;">📦 Mark Ready</button>
           <button formaction="{% url 'admin_issue' req.id %}"      class="btn btn-success" style="justify-content:center;padding:12px;">✅ Issue Now</button>
         </div>

@@ -12,34 +12,53 @@
   .badge-rejected   { background:#7f1d1d;color:#fecaca; }
   .badge-returned   { background:#374151;color:#d1d5db; }
 
-  .stat-card { border-radius: 12px; padding: 20px; display:flex; align-items:center; gap:16px; }
+  .stat-card { border-radius: 12px; padding: 16px 20px; display:flex; align-items:center; gap:14px; }
   .stat-card.pending    { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); }
   .stat-card.waitlisted { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); }
   .stat-card.approved   { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); }
   .stat-card.ready      { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); }
   .stat-card.issued     { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
   .stat-card.returned   { background: rgba(107,114,128,0.08); border: 1px solid rgba(107,114,128,0.2); }
-  .stat-num   { font-size: 32px; font-weight:800; line-height:1; }
+  .stat-num   { font-size: 30px; font-weight:800; line-height:1; }
   .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
-  .stat-icon  { font-size: 28px; }
+  .stat-icon  { font-size: 24px; flex-shrink: 0; }
 
   .queue-card {
     background: rgba(124,58,237,0.06);
     border: 1px solid rgba(124,58,237,0.2);
-    border-radius: 12px; padding: 16px; margin-bottom: 8px;
-    display: flex; align-items: center; gap: 16px;
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 14px;
   }
   .queue-badge {
-    width: 44px; height: 44px; border-radius: 50%;
+    width: 40px; height: 40px; border-radius: 50%;
     background: rgba(124,58,237,0.2);
     display:flex; align-items:center; justify-content:center;
-    font-size: 18px; font-weight: 800; color: #a78bfa;
+    font-size: 16px; font-weight: 800; color: #a78bfa;
     flex-shrink: 0;
   }
   .overdue-tag {
     background: #7f1d1d; color: #fca5a5;
     font-size: 10px; font-weight: 700; padding: 2px 7px;
     border-radius: 20px; text-transform: uppercase; margin-left: 6px;
+  }
+
+  /* Mobile request card */
+  .req-mobile-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: none;
+  }
+  .req-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; }
+  .req-card-gadgets { font-size:14px; font-weight:600; margin-bottom:6px; }
+  .req-card-dates { font-size:12px; color:var(--text2); display:flex; flex-wrap:wrap; gap:10px; }
+
+  @media (max-width: 768px) {
+    .req-mobile-card { display: block; }
+    .req-desktop-table { display: none; }
+    .queue-card { flex-wrap: wrap; }
   }
 </style>
 
@@ -49,14 +68,14 @@
 </div>
 
 <!-- Stats Row -->
-<div class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap:12px; margin-bottom:24px;">
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap:10px; margin-bottom:20px;">
   <div class="stat-card pending">
     <div class="stat-icon">⏳</div>
-    <div><div class="stat-num">{{ pending.count }}</div><div class="stat-label">Pending Review</div></div>
+    <div><div class="stat-num">{{ pending.count }}</div><div class="stat-label">Pending</div></div>
   </div>
   <div class="stat-card waitlisted">
     <div class="stat-icon">📋</div>
-    <div><div class="stat-num">{{ waiting_list.count }}</div><div class="stat-label">Waiting List</div></div>
+    <div><div class="stat-num">{{ waiting_list.count }}</div><div class="stat-label">Waiting</div></div>
   </div>
   <div class="stat-card approved">
     <div class="stat-icon">🕒</div>
@@ -64,7 +83,7 @@
   </div>
   <div class="stat-card ready">
     <div class="stat-icon">📦</div>
-    <div><div class="stat-num">{{ ready.count }}</div><div class="stat-label">Ready for Pickup</div></div>
+    <div><div class="stat-num">{{ ready.count }}</div><div class="stat-label">Ready</div></div>
   </div>
   <div class="stat-card issued">
     <div class="stat-icon">✅</div>
@@ -77,14 +96,14 @@
 </div>
 
 <!-- Quick Actions -->
-<div style="display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;">
+<div class="quick-actions">
   <a href="{% url 'request_gadget' %}" class="btn btn-primary">+ New Request</a>
   <a href="{% url 'gadgets' %}" class="btn btn-ghost">Browse Gadgets</a>
 </div>
 
 <!-- Waiting Queue Section -->
 {% if enriched_waiting %}
-<div class="card" style="margin-bottom:28px;">
+<div class="card" style="margin-bottom:24px;">
   <div class="flex-between" style="margin-bottom:16px;">
     <h2 style="font-size:16px;font-weight:700;">📋 My Waitlist</h2>
     <span style="font-size:13px;color:var(--text2);">{{ waiting_list.count }} item(s)</span>
@@ -93,24 +112,24 @@
   {% with wq=entry.wq %}
   <div class="queue-card">
     <div class="queue-badge">#{{ wq.queue_position }}</div>
-    <div style="flex:1;">
+    <div style="flex:1;min-width:0;">
       <div style="font-weight:700;font-size:15px;">{{ wq.gadget.name }}</div>
       <div style="font-size:12px;color:var(--text2);margin-top:2px;">
-        {{ wq.gadget.category.name|default:"Uncategorized" }} · {{ wq.quantity }}x requested · {{ wq.duration_days }} day(s)
+        {{ wq.gadget.category.name|default:"Uncategorized" }} · {{ wq.quantity }}x · {{ wq.duration_days }} day(s)
       </div>
-      <div style="font-size:12px;margin-top:6px;display:flex;gap:16px;flex-wrap:wrap;">
-        <span>🗓️ Requested: <strong>{{ wq.created_at|date:"d M Y" }}</strong></span>
+      <div style="font-size:12px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
+        <span>🗓️ {{ wq.created_at|date:"d M Y" }}</span>
         {% if entry.estimated_date %}
-        <span>⏰ Est. available: <strong style="color:#60a5fa;">{{ entry.estimated_date|date:"d M Y" }}</strong></span>
+        <span>⏰ Est: <strong style="color:#60a5fa;">{{ entry.estimated_date|date:"d M Y" }}</strong></span>
         {% else %}
-        <span style="color:var(--text2);">⏰ Est. availability: <strong>Unknown</strong></span>
+        <span style="color:var(--text2);">⏰ Est: Unknown</span>
         {% endif %}
       </div>
     </div>
     {% if wq.notified %}
-    <span class="badge badge-ready" style="white-space:nowrap;">Notified ✓</span>
+    <span class="badge badge-ready" style="white-space:nowrap;flex-shrink:0;">Notified ✓</span>
     {% else %}
-    <span class="badge badge-waitlisted" style="white-space:nowrap;">Waiting</span>
+    <span class="badge badge-waitlisted" style="white-space:nowrap;flex-shrink:0;">Waiting</span>
     {% endif %}
   </div>
   {% endwith %}
@@ -118,7 +137,7 @@
 </div>
 {% endif %}
 
-<!-- All Requests Table -->
+<!-- All Requests Section -->
 <div class="card">
   <div class="flex-between" style="margin-bottom:16px;">
     <h2 style="font-size:16px;font-weight:700;">All My Requests</h2>
@@ -126,59 +145,66 @@
   </div>
 
   {% if requests %}
-  <div class="table-wrap">
+
+  <!-- Desktop Table -->
+  <div class="table-wrap req-desktop-table">
     <table>
       <thead>
         <tr>
-          <th class="hide-on-mobile">#</th>
+          <th>#</th>
           <th>Gadgets</th>
-          <th class="hide-on-mobile">Requested On</th>
-          <th class="hide-on-mobile">Expected Dates</th>
-          <th class="hide-on-mobile">Actual Dates</th>
+          <th>Requested On</th>
+          <th>Expected Return</th>
           <th>Status</th>
         </tr>
       </thead>
       <tbody>
         {% for r in requests %}
         <tr>
-          <td class="hide-on-mobile">
-            <span style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</span>
-          </td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</td>
           <td>
             {% for item in r.items.all %}
               <div style="font-size:14px;font-weight:600;">{{ item.quantity }}× {{ item.gadget.name }}</div>
             {% endfor %}
           </td>
-          <td class="hide-on-mobile" style="font-size:13px;color:var(--text2);">{{ r.created_at|date:"d M Y" }}</td>
-          <td class="hide-on-mobile" style="font-size:13px;">
-            <span style="color:var(--text2);">Issue:</span> {{ r.expected_issue_date|date:"d M Y"|default:"–" }}<br>
-            <span style="color:var(--text2);">Return:</span> {{ r.expected_return_date|date:"d M Y"|default:"–" }}
-          </td>
-          <td class="hide-on-mobile" style="font-size:13px;">
-            {% if r.issue_date %}
-              <span style="color:#4ade80;">{{ r.issue_date|date:"d M Y" }}</span><br>
-            {% else %}
-              <span style="color:var(--text2);">–</span><br>
-            {% endif %}
-            {% if r.return_date %}
-              <span style="color:#facc15;">{{ r.return_date|date:"d M Y" }}</span>
-            {% else %}
-              <span style="color:var(--text2);">–</span>
-            {% endif %}
+          <td style="font-size:13px;color:var(--text2);white-space:nowrap;">{{ r.created_at|date:"d M Y" }}</td>
+          <td style="font-size:13px;white-space:nowrap;">
+            {% if r.expected_return_date %}{{ r.expected_return_date|date:"d M Y" }}{% else %}–{% endif %}
+            {% if r.return_date %}<br><span style="color:#facc15;">Ret: {{ r.return_date|date:"d M Y" }}</span>{% endif %}
           </td>
           <td>
-            <span class="badge badge-{{ r.status }}">
-              {{ r.get_status_display }}
-            </span>
-            {% if r.is_overdue %}
-              <span class="overdue-tag">Overdue</span>
-            {% endif %}
+            <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+            {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <!-- Mobile Cards -->
+  {% for r in requests %}
+  <div class="req-mobile-card">
+    <div class="req-card-top">
+      <div class="req-card-gadgets">
+        {% for item in r.items.all %}
+          {{ item.quantity }}× {{ item.gadget.name }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      </div>
+      <div style="flex-shrink:0;">
+        <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+        {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
+      </div>
+    </div>
+    <div class="req-card-dates">
+      <span>📅 Req: {{ r.created_at|date:"d M Y" }}</span>
+      {% if r.expected_return_date %}<span>🔙 Return by: {{ r.expected_return_date|date:"d M Y" }}</span>{% endif %}
+      {% if r.issue_date %}<span style="color:#4ade80;">✅ Issued: {{ r.issue_date|date:"d M Y" }}</span>{% endif %}
+      {% if r.return_date %}<span style="color:#facc15;">🔄 Returned: {{ r.return_date|date:"d M Y" }}</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
   {% else %}
   <div class="empty-state">
     <div class="icon">📋</div>

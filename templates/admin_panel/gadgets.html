@@ -7,12 +7,52 @@
   .stock-mini { display:flex;gap:6px;flex-wrap:wrap;margin-top:6px; }
   .sm-chip {
     font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;
-    background:rgba(255,255,255,0.05);border:1px solid var(--border);
+    background:rgba(0,0,0,0.05);border:1px solid var(--border);
   }
-  .sm-chip.avail  { border-color:rgba(74,222,128,0.4);color:#4ade80; }
-  .sm-chip.reserv { border-color:rgba(250,204,21,0.4);color:#facc15; }
-  .sm-chip.issued { border-color:rgba(248,113,113,0.4);color:#f87171; }
-  .sm-chip.queue  { border-color:rgba(167,139,250,0.4);color:#a78bfa; }
+  .sm-chip.avail  { border-color:rgba(74,222,128,0.4);color:#059669; }
+  .sm-chip.reserv { border-color:rgba(250,204,21,0.4);color:#d97706; }
+  .sm-chip.issued { border-color:rgba(248,113,113,0.4);color:#dc2626; }
+  .sm-chip.queue  { border-color:rgba(167,139,250,0.4);color:#7c3aed; }
+
+  /* Mobile gadget card */
+  .gadget-mobile-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .gadget-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .gadget-card-img {
+    width: 56px; height: 56px;
+    object-fit: cover; border-radius: 8px;
+    background: rgba(0,0,0,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .gadget-card-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+  .gadget-card-name { font-weight: 700; font-size: 15px; }
+  .gadget-card-cat  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .gadget-card-actions {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 12px; margin-top: 12px;
+  }
+  .gadget-card-actions .btn { flex: 1; min-width: 80px; justify-content: center; }
+  .gadget-card-actions form { flex: 1; min-width: 80px; }
+  .gadget-card-actions form button { width: 100%; justify-content: center; }
+
+  @media (max-width: 768px) {
+    .gadget-mobile-card { display: block; }
+    .gadget-desktop-table { display: none; }
+    .page-header.flex-between { flex-direction: row; align-items: center; }
+  }
 </style>
 
 <div class="page-header flex-between">
@@ -20,11 +60,13 @@
     <h1>Gadget Management</h1>
     <p>Add, edit, and manage all gadgets and their stock.</p>
   </div>
-  <a href="{% url 'admin_gadget_add' %}" class="btn btn-primary">+ Add Gadget</a>
+  <a href="{% url 'admin_gadget_add' %}" class="btn btn-primary" style="flex-shrink:0;">+ Add Gadget</a>
 </div>
 
-<div class="card">
-  {% if gadgets %}
+{% if gadgets %}
+
+<!-- ══ DESKTOP TABLE ══ -->
+<div class="card gadget-desktop-table">
   <div class="table-wrap">
     <table>
       <thead>
@@ -47,13 +89,13 @@
           <td>
             <div style="display:flex;align-items:center;gap:10px;">
               {% if stat.gadget.image %}
-                <img src="{{ stat.gadget.image.url }}" alt="{{ stat.gadget.name }}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+                <img src="{{ stat.gadget.image.url }}" alt="{{ stat.gadget.name }}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;">
               {% else %}
-                <div style="width:80px;height:80px;background:rgba(255,255,255,0.05);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:32px;">🔧</div>
+                <div style="width:48px;height:48px;background:rgba(0,0,0,0.06);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;">🔧</div>
               {% endif %}
               <div>
                 <strong>{{ stat.gadget.name }}</strong><br>
-                <span style="font-size:12px;color:var(--text2);">{{ stat.gadget.description|truncatechars:40 }}</span>
+                <span style="font-size:12px;color:var(--text2);">{{ stat.gadget.description|truncatechars:35 }}</span>
               </div>
             </div>
           </td>
@@ -65,11 +107,11 @@
               <span class="sm-chip issued">📤 {{ stat.issued }}</span>
             </div>
           </td>
-          <td style="font-size:13px;">
+          <td style="font-size:13px;white-space:nowrap;">
             {% if stat.next_available_date %}
               {{ stat.next_available_date|date:"d M Y" }}
             {% elif stat.available > 0 %}
-              <span style="color:#4ade80;">Now</span>
+              <span style="color:#059669;">Now</span>
             {% else %}
               <span style="color:var(--text2);">Unknown</span>
             {% endif %}
@@ -83,22 +125,22 @@
           </td>
           <td>
             {% if stat.gadget.is_active %}
-            <span class="badge badge-issued" style="background:#065f46;color:#a7f3d0;">Active</span>
+            <span class="badge badge-issued" style="background:#dcfce7;color:#166534;">Active</span>
             {% else %}
-            <span class="badge badge-rejected" style="background:#7f1d1d;color:#fecaca;">Inactive</span>
+            <span class="badge badge-rejected" style="background:#fee2e2;color:#991b1b;">Inactive</span>
             {% endif %}
           </td>
           <td>
-            <a href="{% url 'admin_gadget_edit' stat.gadget.id %}" class="btn btn-ghost btn-sm">Edit</a>
-            {% if stat.gadget.is_active %}
-            <form method="post" action="{% url 'admin_gadget_delete' stat.gadget.id %}" style="display:inline;"
-                  onsubmit="return confirm('Deactivate {{ stat.gadget.name }}?')">
-              {% csrf_token %}
-              <button class="btn btn-danger mr-2 mt-3 btn-sm">Deactivate</button>
-            </form>
-
-            
-            {% endif %}
+            <div class="action-btns">
+              <a href="{% url 'admin_gadget_edit' stat.gadget.id %}" class="btn btn-ghost btn-sm">Edit</a>
+              {% if stat.gadget.is_active %}
+              <form method="post" action="{% url 'admin_gadget_delete' stat.gadget.id %}" style="display:inline;"
+                    onsubmit="return confirm('Deactivate {{ stat.gadget.name }}?')">
+                {% csrf_token %}
+                <button class="btn btn-danger btn-sm">Deactivate</button>
+              </form>
+              {% endif %}
+            </div>
           </td>
         </tr>
         {% endwith %}
@@ -106,11 +148,64 @@
       </tbody>
     </table>
   </div>
-  {% else %}
-  <div class="empty-state">
-    <div class="icon">⚙️</div>
-    <p>No gadgets yet. <a href="{% url 'admin_gadget_add' %}" style="color:var(--accent);">Add your first gadget →</a></p>
-  </div>
-  {% endif %}
 </div>
+
+<!-- ══ MOBILE CARDS ══ -->
+{% for g in gadgets %}
+{% with stat=g %}
+<div class="gadget-mobile-card">
+  <div class="gadget-card-header">
+    <div class="gadget-card-img">
+      {% if stat.gadget.image %}
+        <img src="{{ stat.gadget.image.url }}" alt="{{ stat.gadget.name }}">
+      {% else %}
+        🔧
+      {% endif %}
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div class="gadget-card-name">{{ stat.gadget.name }}</div>
+      <div class="gadget-card-cat">{{ stat.gadget.category.name|default:"Uncategorized" }}</div>
+      {% if stat.gadget.is_active %}
+      <span class="sm-chip avail" style="margin-top:4px;display:inline-block;">Active</span>
+      {% else %}
+      <span class="sm-chip issued" style="margin-top:4px;display:inline-block;">Inactive</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="stock-mini" style="margin-bottom:10px;">
+    <span class="sm-chip avail">✅ Avail: {{ stat.available }}/{{ stat.total }}</span>
+    <span class="sm-chip reserv">🔒 Reserved: {{ stat.reserved }}</span>
+    <span class="sm-chip issued">📤 Issued: {{ stat.issued }}</span>
+    {% if stat.waitlist_count > 0 %}
+    <span class="sm-chip queue">📋 {{ stat.waitlist_count }} waiting</span>
+    {% endif %}
+  </div>
+
+  {% if stat.next_available_date %}
+  <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">🗓️ Next available: <strong>{{ stat.next_available_date|date:"d M Y" }}</strong></div>
+  {% elif stat.available > 0 %}
+  <div style="font-size:12px;color:#059669;margin-bottom:10px;">✅ Available now</div>
+  {% endif %}
+
+  <div class="gadget-card-actions">
+    <a href="{% url 'admin_gadget_edit' stat.gadget.id %}" class="btn btn-ghost btn-sm">✏️ Edit</a>
+    {% if stat.gadget.is_active %}
+    <form method="post" action="{% url 'admin_gadget_delete' stat.gadget.id %}"
+          onsubmit="return confirm('Deactivate {{ stat.gadget.name }}?')">
+      {% csrf_token %}
+      <button class="btn btn-danger btn-sm">Deactivate</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+
+{% else %}
+<div class="empty-state">
+  <div class="icon">⚙️</div>
+  <p>No gadgets yet. <a href="{% url 'admin_gadget_add' %}" style="color:var(--accent);">Add your first gadget →</a></p>
+</div>
+{% endif %}
 {% endblock %}

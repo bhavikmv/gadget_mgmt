@@ -28,6 +28,27 @@
     font-size: 13px; color: #fbbf24;
     margin-top: 12px; display: none;
   }
+
+  /* 2-column form row that collapses on mobile */
+  .form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 480px) {
+    .form-row-2col { grid-template-columns: 1fr; }
+  }
+
+  /* Side panel hides below 768px and renders inline */
+  @media (max-width: 768px) {
+    .request-side-panel {
+      display: none;
+    }
+    .request-side-panel.show-mobile {
+      display: block;
+      margin-top: 24px;
+    }
+  }
 </style>
 
 <div class="page-header">
@@ -35,7 +56,7 @@
   <p>Select a gadget, duration, and quantity. Real-time availability is shown below.</p>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start;">
+<div class="responsive-grid-2-1" style="align-items:start;">
 
   <!-- FORM CARD -->
   <div class="card">
@@ -48,7 +69,7 @@
         <label class="form-label">Student</label>
         <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly style="opacity:0.6;">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row-2col">
         <div class="form-group">
           <label class="form-label">GR Number</label>
           <input type="text" class="form-control" value="{{ user.student_profile.gr_number }}" readonly style="opacity:0.6;">
@@ -69,7 +90,7 @@
             {% if form.gadget.errors %}<div class="form-error">{{ form.gadget.errors.0 }}</div>{% endif %}
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-row-2col">
             <div class="form-group">
               <label class="form-label">Duration (Days) *</label>
               {{ form.days }}
@@ -103,8 +124,8 @@
     </form>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
+  <!-- RIGHT PANEL (hidden on mobile, shown as collapsed accordion below form on very small screens) -->
+  <div class="request-side-panel" style="display:flex;flex-direction:column;gap:16px;">
 
     <div class="card">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📋 Request Rules</h3>

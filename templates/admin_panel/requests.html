@@ -12,6 +12,55 @@
   .badge-rejected   { background:#7f1d1d;color:#fecaca; }
   .badge-returned   { background:#374151;color:#d1d5db; }
   .overdue-tag { background:#7f1d1d;color:#fca5a5;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;margin-left:4px; }
+
+  /* ── Mobile request card ── */
+  .req-mobile-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .req-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  .req-card-student { font-weight: 700; font-size: 15px; }
+  .req-card-gr { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .req-card-items { margin-bottom: 10px; }
+  .req-card-item { font-size: 13px; margin-bottom: 3px; }
+  .req-card-meta {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    font-size: 12px; color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .req-card-actions {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .req-card-actions .btn { flex: 1; min-width: 100px; justify-content: center; }
+  .req-card-actions form { flex: 1; min-width: 100px; }
+  .req-card-actions form button { width: 100%; justify-content: center; }
+
+  @media (max-width: 768px) {
+    .req-mobile-card { display: block; }
+    .req-desktop-table { display: none; }
+  }
+
+  /* Scrollable tabs on all sizes */
+  .filter-tabs-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    scrollbar-width: none;
+  }
+  .filter-tabs-wrap::-webkit-scrollbar { display: none; }
+  .filter-tabs-wrap .tabs { width: max-content; margin-bottom: 0; }
 </style>
 
 <div class="page-header">
@@ -20,29 +69,32 @@
 </div>
 
 <!-- Filter Tabs -->
-<div class="tabs" style="margin-bottom:20px;flex-wrap:wrap;gap:6px;">
-  <a href="{% url 'admin_requests' %}" class="tab {% if not status_filter %}active{% endif %}">All</a>
-  <a href="?status=pending"    class="tab {% if status_filter == 'pending' %}active{% endif %}">⏳ Pending</a>
-  <a href="?status=waitlisted" class="tab {% if status_filter == 'waitlisted' %}active{% endif %}">📋 Waitlisted</a>
-  <a href="?status=approved"   class="tab {% if status_filter == 'approved' %}active{% endif %}">🕒 Approved</a>
-  <a href="?status=ready"      class="tab {% if status_filter == 'ready' %}active{% endif %}">📦 Ready</a>
-  <a href="?status=issued"     class="tab {% if status_filter == 'issued' %}active{% endif %}">✅ Issued</a>
-  <a href="?status=rejected"   class="tab {% if status_filter == 'rejected' %}active{% endif %}">❌ Rejected</a>
-  <a href="?status=returned"   class="tab {% if status_filter == 'returned' %}active{% endif %}">🔄 Returned</a>
+<div class="filter-tabs-wrap">
+  <div class="tabs">
+    <a href="{% url 'admin_requests' %}" class="tab {% if not status_filter %}active{% endif %}">All</a>
+    <a href="?status=pending"    class="tab {% if status_filter == 'pending' %}active{% endif %}">⏳ Pending</a>
+    <a href="?status=waitlisted" class="tab {% if status_filter == 'waitlisted' %}active{% endif %}">📋 Waitlisted</a>
+    <a href="?status=approved"   class="tab {% if status_filter == 'approved' %}active{% endif %}">🕒 Approved</a>
+    <a href="?status=ready"      class="tab {% if status_filter == 'ready' %}active{% endif %}">📦 Ready</a>
+    <a href="?status=issued"     class="tab {% if status_filter == 'issued' %}active{% endif %}">✅ Issued</a>
+    <a href="?status=rejected"   class="tab {% if status_filter == 'rejected' %}active{% endif %}">❌ Rejected</a>
+    <a href="?status=returned"   class="tab {% if status_filter == 'returned' %}active{% endif %}">🔄 Returned</a>
+  </div>
 </div>
 
-<div class="card">
-  {% if requests %}
+{% if requests %}
+
+<!-- ══ DESKTOP TABLE ══ -->
+<div class="card req-desktop-table">
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th class="hide-on-mobile">#</th>
+          <th>#</th>
           <th>Student</th>
           <th>Items</th>
-          <th class="hide-on-mobile">Requested On</th>
-          <th class="hide-on-mobile">Expected Dates</th>
-          <th class="hide-on-mobile">Actual Dates</th>
+          <th>Requested</th>
+          <th>Expected Dates</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -50,70 +102,123 @@
       <tbody>
         {% for r in requests %}
         <tr>
-          <td class="hide-on-mobile" style="font-family:'JetBrains Mono',monospace;color:var(--text2);">#{{ r.id }}</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--text2);white-space:nowrap;">#{{ r.id }}</td>
           <td>
             <strong>{{ r.student.get_full_name }}</strong><br>
-            <span style="font-size:12px;color:var(--text2);">{{ r.student.student_profile.gr_number }} · {{ r.student.email }}</span>
+            <span style="font-size:12px;color:var(--text2);">{{ r.student.student_profile.gr_number }}</span>
           </td>
           <td>
             {% for item in r.items.all %}
-              <div style="font-size:13px;">{{ item.quantity }}× {{ item.gadget.name }}</div>
+              <div style="font-size:13px;white-space:nowrap;">{{ item.quantity }}× {{ item.gadget.name }}</div>
             {% endfor %}
           </td>
-          <td class="hide-on-mobile" style="font-size:12px;color:var(--text2);">{{ r.created_at|date:"d M Y" }}</td>
-          <td class="hide-on-mobile" style="font-size:12px;">
+          <td style="font-size:12px;color:var(--text2);white-space:nowrap;">{{ r.created_at|date:"d M Y" }}</td>
+          <td style="font-size:12px;white-space:nowrap;">
             <span style="color:var(--text2);">Issue:</span> {{ r.expected_issue_date|date:"d M Y"|default:"–" }}<br>
             <span style="color:var(--text2);">Return:</span> {{ r.expected_return_date|date:"d M Y"|default:"–" }}
-          </td>
-          <td class="hide-on-mobile" style="font-size:12px;">
-            {% if r.issue_date %}<span style="color:#4ade80;">{{ r.issue_date|date:"d M Y" }}</span>{% else %}<span style="color:var(--text2);">–</span>{% endif %}<br>
-            {% if r.return_date %}<span style="color:#facc15;">{{ r.return_date|date:"d M Y" }}</span>{% else %}<span style="color:var(--text2);">–</span>{% endif %}
           </td>
           <td>
             <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
             {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
           </td>
           <td>
-            <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm"
-               style="display:block;margin-bottom:4px;text-align:center;">View Details</a>
-            {% if r.status == 'pending' %}
-            <form method="post" action="{% url 'admin_approve' r.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button class="btn btn-success btn-sm">✅ Approve</button>
-            </form>
-            <form method="post" action="{% url 'admin_reject' r.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button class="btn btn-danger btn-sm">❌ Reject</button>
-            </form>
-            {% elif r.status == 'approved' %}
-            <form method="post" action="{% url 'admin_mark_ready' r.id %}" style="display:inline;">
-              {% csrf_token %}<button class="btn btn-primary btn-sm">📦 Mark Ready</button>
-            </form>
-            <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
-              {% csrf_token %}<button class="btn btn-success btn-sm">✅ Issue</button>
-            </form>
-            {% elif r.status == 'ready' %}
-            <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
-              {% csrf_token %}<button class="btn btn-success btn-sm">✅ Issue</button>
-            </form>
-            {% elif r.status == 'issued' %}
-            <form method="post" action="{% url 'admin_return' r.id %}" style="display:inline;">
-              {% csrf_token %}<button class="btn btn-warning btn-sm">🔄 Returned</button>
-            </form>
-            {% else %}
-            <span style="color:var(--text2);font-size:12px;">{{ r.get_status_display }}</span>
-            {% endif %}
+            <div class="action-btns" style="min-width:120px;">
+              <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm">View</a>
+              {% if r.status == 'pending' %}
+              <form method="post" action="{% url 'admin_approve' r.id %}" style="display:inline;">
+                {% csrf_token %}<button class="btn btn-success btn-sm">✅</button>
+              </form>
+              <form method="post" action="{% url 'admin_reject' r.id %}" style="display:inline;">
+                {% csrf_token %}<button class="btn btn-danger btn-sm">❌</button>
+              </form>
+              {% elif r.status == 'approved' %}
+              <form method="post" action="{% url 'admin_mark_ready' r.id %}" style="display:inline;">
+                {% csrf_token %}<button class="btn btn-primary btn-sm">📦</button>
+              </form>
+              <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
+                {% csrf_token %}<button class="btn btn-success btn-sm">✅</button>
+              </form>
+              {% elif r.status == 'ready' %}
+              <form method="post" action="{% url 'admin_issue' r.id %}" style="display:inline;">
+                {% csrf_token %}<button class="btn btn-success btn-sm">Issue</button>
+              </form>
+              {% elif r.status == 'issued' %}
+              <form method="post" action="{% url 'admin_return' r.id %}" style="display:inline;">
+                {% csrf_token %}<button class="btn btn-warning btn-sm">🔄 Return</button>
+              </form>
+              {% endif %}
+            </div>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  {% else %}
-  <div class="empty-state">
-    <div class="icon">📋</div>
-    <p>No {{ status_filter }} requests found.</p>
-  </div>
-  {% endif %}
 </div>
+
+<!-- ══ MOBILE CARD LIST ══ -->
+{% for r in requests %}
+<div class="req-mobile-card">
+  <div class="req-card-header">
+    <div>
+      <div class="req-card-student">{{ r.student.get_full_name }}</div>
+      <div class="req-card-gr">{{ r.student.student_profile.gr_number }} · #{{ r.id }}</div>
+    </div>
+    <div>
+      <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+      {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="req-card-items">
+    {% for item in r.items.all %}
+    <div class="req-card-item">📦 {{ item.quantity }}× {{ item.gadget.name }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="req-card-meta">
+    <span>📅 {{ r.created_at|date:"d M Y" }}</span>
+    {% if r.expected_return_date %}
+    <span>🔙 Return by {{ r.expected_return_date|date:"d M Y" }}</span>
+    {% endif %}
+    {% if r.issue_date %}
+    <span style="color:#4ade80;">✅ Issued {{ r.issue_date|date:"d M" }}</span>
+    {% endif %}
+  </div>
+
+  <div class="req-card-actions">
+    <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm">View Details</a>
+    {% if r.status == 'pending' %}
+    <form method="post" action="{% url 'admin_approve' r.id %}">
+      {% csrf_token %}<button class="btn btn-success btn-sm">✅ Approve</button>
+    </form>
+    <form method="post" action="{% url 'admin_reject' r.id %}">
+      {% csrf_token %}<button class="btn btn-danger btn-sm">❌ Reject</button>
+    </form>
+    {% elif r.status == 'approved' %}
+    <form method="post" action="{% url 'admin_mark_ready' r.id %}">
+      {% csrf_token %}<button class="btn btn-primary btn-sm">📦 Mark Ready</button>
+    </form>
+    <form method="post" action="{% url 'admin_issue' r.id %}">
+      {% csrf_token %}<button class="btn btn-success btn-sm">✅ Issue</button>
+    </form>
+    {% elif r.status == 'ready' %}
+    <form method="post" action="{% url 'admin_issue' r.id %}">
+      {% csrf_token %}<button class="btn btn-success btn-sm">✅ Issue to Student</button>
+    </form>
+    {% elif r.status == 'issued' %}
+    <form method="post" action="{% url 'admin_return' r.id %}">
+      {% csrf_token %}<button class="btn btn-warning btn-sm">🔄 Mark Returned</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty-state">
+  <div class="icon">📋</div>
+  <p>No {{ status_filter }} requests found.</p>
+</div>
+{% endif %}
 {% endblock %}
