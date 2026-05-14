@@ -5,11 +5,14 @@
 {% block content %}
 <style>
   .gadgets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    display: flex;
+    overflow-x: auto;
     gap: 20px;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
   }
   .gadget-card {
+    flex: 0 0 280px;
     background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 14px;
