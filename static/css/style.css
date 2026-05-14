@@ -197,8 +197,6 @@ body {
 /* ── TABLE ── */
 .table-wrap {
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: 600px;
   -webkit-overflow-scrolling: touch;
 }
 table {

@@ -170,6 +170,7 @@
   </div>
 
   <!-- Mobile Cards -->
+  <div class="mobile-card-slider">
   {% for r in recent_requests %}
   <div class="req-mobile-card">
     <div class="req-card-top">
@@ -190,6 +191,8 @@
     <a href="{% url 'admin_request_detail' r.id %}" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">View Details</a>
   </div>
   {% endfor %}
+  </div>
+
 
   {% else %}
   <div class="empty-state"><div class="icon">📋</div><p>No requests yet.</p></div>
