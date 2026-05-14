@@ -83,9 +83,9 @@
     <h2 style="font-size:16px;font-weight:700;">Gadget Inventory</h2>
     <a href="{% url 'admin_gadgets' %}" class="btn btn-ghost btn-sm">Manage →</a>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+  <div style="display:flex;overflow-x:auto;gap:12px;padding-bottom:12px;-webkit-overflow-scrolling:touch;">
     {% for g in gadgets %}
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;">
+    <div style="flex:0 0 160px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         {% if g.image %}
           <img src="{{ g.image.url }}" alt="{{ g.name }}" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">
