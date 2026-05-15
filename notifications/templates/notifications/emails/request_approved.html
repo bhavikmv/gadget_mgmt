@@ -2,39 +2,66 @@
 <html>
 <head>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; }
-        .header { background-color: #27ae60; color: #ffffff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { padding: 20px; background-color: #ffffff; border-radius: 0 0 8px 8px; }
-        .footer { margin-top: 20px; text-align: center; font-size: 0.8em; color: #777; }
-        .details { background-color: #f1f1f1; padding: 15px; border-radius: 5px; margin: 15px 0; }
-        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 3px; font-weight: bold; background-color: #27ae60; color: white; }
-        .important { color: #c0392b; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; padding: 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .header { background-color: #27ae60; color: #ffffff; padding: 20px 25px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .header p { margin: 5px 0 0; font-size: 13px; opacity: 0.8; }
+        .content { padding: 25px; background-color: #ffffff; }
+        .footer { background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 0.8em; color: #777; border-top: 1px solid #e0e0e0; }
+        .details { background-color: #f8f9fa; padding: 16px 20px; border-radius: 6px; margin: 16px 0; border-left: 4px solid #27ae60; }
+        .details h3 { margin: 0 0 12px; font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        .details p { margin: 6px 0; font-size: 14px; }
+        .item-list { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .item-list th { background: #e9ecef; padding: 8px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; }
+        .item-list td { padding: 8px 12px; border-bottom: 1px solid #e9ecef; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; background-color: #27ae60; color: white; font-size: 13px; }
+        .important { background-color: #eafaf1; border: 1px solid #a9dfbf; border-radius: 6px; padding: 12px 16px; margin: 16px 0; color: #1e8449; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Request Approved!</h1>
+            <p>Your gadget request has been approved</p>
         </div>
         <div class="content">
-            <p>Dear {{ booking.student.get_full_name }},</p>
-            <p>Great news! Your request for the gadget has been <strong style="color: #27ae60;">Approved</strong>.</p>
-            <p class="important">You can now proceed to collect the gadget from the management office.</p>
-            
-            <div class="details">
-                <h3>Approval Details:</h3>
-                <p><strong>Gadget:</strong> {{ booking.gadget.name }}</p>
-                <p><strong>Quantity:</strong> {{ booking.quantity }}</p>
-                <p><strong>Approved Days:</strong> {{ booking.days }} days</p>
-                <p><strong>Start Date:</strong> {{ booking.start_date|date:"F d, Y" }}</p>
-                <p><strong>End Date (Return By):</strong> {{ booking.end_date|date:"F d, Y" }}</p>
-                <p><strong>Approved By:</strong> Admin {{ booking.approved_by.get_full_name|default:"Administrator" }}</p>
-                <p><strong>Status:</strong> <span class="status-badge">Approved</span></p>
+            <p>Dear <strong>{{ req.student.get_full_name }}</strong>,</p>
+            <p>Great news! Your gadget request has been <strong style="color: #27ae60;">Approved</strong>.</p>
+
+            <div class="important">
+                You can now proceed to collect the gadget(s) from the management office.
             </div>
-            
-            <p>Please ensure you return the gadget on or before the return date mentioned above.</p>
-            <p>Best regards,<br>The Gadget Management Team</p>
+
+            <div class="details">
+                <h3>Approval Details</h3>
+                <p><strong>Request ID:</strong> #{{ req.id }}</p>
+                <p><strong>Start Date:</strong> {{ req.expected_issue_date|date:"d M Y"|default:"TBD" }}</p>
+                <p><strong>Return By:</strong> {{ req.expected_return_date|date:"d M Y"|default:"TBD" }}</p>
+                <p><strong>Status:</strong> <span class="status-badge">Approved</span></p>
+
+                <br>
+                <strong>Approved Items:</strong>
+                <table class="item-list">
+                    <thead>
+                        <tr>
+                            <th>Gadget</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in req.items.all %}
+                        <tr>
+                            <td>{{ item.gadget.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <p>Please ensure you return the gadget(s) on or before the return date mentioned above to avoid any penalties.</p>
+            <p>Best regards,<br><strong>The Gadget Management Team</strong></p>
         </div>
         <div class="footer">
             <p>This is an official automated email. Please do not reply to this message.</p>

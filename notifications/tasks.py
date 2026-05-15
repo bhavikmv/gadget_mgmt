@@ -20,7 +20,8 @@ def send_notification_email_task(self, request_id, email_type):
             'placed': ('Gadget Request Placed Successfully', 'notifications/emails/request_placed.html'),
             'approved': ('Gadget Request Approved', 'notifications/emails/request_approved.html'),
             'returned': ('Gadget Returned Successfully', 'notifications/emails/gadget_returned.html'),
-            'reminder': ('Official Reminder: 3 Days Left for Gadget Return', 'notifications/emails/return_reminder.html')
+            'reminder': ('Reminder: 3 Days Left to Return Your Gadget', 'notifications/emails/return_reminder.html'),
+            'reminder_1day': ('Urgent: 1 Day Left to Return Your Gadget', 'notifications/emails/return_reminder.html'),
         }
 
         if email_type not in templates:
@@ -28,10 +29,11 @@ def send_notification_email_task(self, request_id, email_type):
 
         subject, template_name = templates[email_type]
         
-        context = {'request': req}
-        if email_type == 'reminder':
-            context['remaining_days'] = 3
-            context['submit_date'] = req.expected_return_date
+        context = {'req': req}
+        if email_type in ('reminder', 'reminder_1day'):
+            today = date.today()
+            remaining = (req.expected_return_date - today).days if req.expected_return_date else 0
+            context['remaining_days'] = remaining
 
         html_message = render_to_string(template_name, context)
         plain_message = strip_tags(html_message)
