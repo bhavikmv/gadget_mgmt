@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Gadget, Request, RequestItem, WaitingQueue
+from .models import Category, Gadget, Request, RequestItem
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -24,8 +24,4 @@ class RequestAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     inlines = [RequestItemInline]
 
-@admin.register(WaitingQueue)
-class WaitingQueueAdmin(admin.ModelAdmin):
-    list_display = ['student', 'gadget', 'queue_position', 'notified', 'created_at']
-    list_filter = ['notified', 'gadget']
-    search_fields = ['student__email', 'gadget__name']
+

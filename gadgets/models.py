@@ -61,14 +61,12 @@ class Gadget(models.Model):
         from .services import calculate_next_available_date
         return calculate_next_available_date(self)
 
-    def waitlist_count(self):
-        return self.waiting_queues.filter(notified=False).count()
+
 
 
 class Request(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending Review'),
-        ('waitlisted', 'Waiting List'),
         ('approved', 'Approved'),
         ('ready', 'Ready for Pickup'),
         ('issued', 'Issued'),
@@ -119,41 +117,4 @@ class RequestItem(models.Model):
         return f"{self.quantity} × {self.gadget.name}"
 
 
-class WaitingQueue(models.Model):
-    """A student waiting for stock of a specific gadget."""
-    student = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='waiting_queues',
-    )
-    gadget = models.ForeignKey(Gadget, on_delete=models.CASCADE, related_name='waiting_queues')
-    quantity = models.PositiveIntegerField(default=1)
 
-    # Expected duration in days (so we can set expected_return_date when fulfilled)
-    duration_days = models.PositiveIntegerField(default=7)
-
-    queue_position = models.PositiveIntegerField(default=0)
-    notified = models.BooleanField(default=False)
-    # Estimated date admin/system calculated when this entry will be fulfilled
-    estimated_availability_date = models.DateField(null=True, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['queue_position']
-        unique_together = ('student', 'gadget')
-
-    def __str__(self):
-        return f"Queue #{self.queue_position} – {self.student.email} for {self.gadget.name}"
-
-    def save(self, *args, **kwargs):
-        # Auto-assign queue position on first creation
-        if not self.pk and not self.queue_position:
-            last = (
-                WaitingQueue.objects
-                .filter(gadget=self.gadget)
-                .order_by('-queue_position')
-                .first()
-            )
-            self.queue_position = (last.queue_position + 1) if last else 1
-        super().save(*args, **kwargs)

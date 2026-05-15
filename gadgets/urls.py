@@ -22,10 +22,6 @@ urlpatterns = [
     path('admin-panel/requests/<int:pk>/reject/', views.admin_reject_request, name='admin_reject'),
     path('admin-panel/requests/<int:pk>/return/', views.admin_mark_returned, name='admin_return'),
 
-    # ── Admin Waiting Queue ───────────────────────────────────────────────────
-    path('admin-panel/queue/', views.admin_waiting_queue_view, name='admin_waiting_queue'),
-    path('admin-panel/queue/<int:pk>/approve/', views.admin_approve_queue_entry, name='admin_approve_queue'),
-    path('admin-panel/queue/<int:pk>/reject/', views.admin_reject_queue_entry, name='admin_reject_queue'),
 
     # ── Admin Gadgets ─────────────────────────────────────────────────────────
     path('admin-panel/gadgets/', views.admin_gadgets_view, name='admin_gadgets'),

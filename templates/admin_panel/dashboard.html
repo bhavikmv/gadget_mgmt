@@ -73,10 +73,7 @@
     <div class="stat-icon">⏳</div>
     <div><div class="stat-num">{{ pending }}</div><div class="stat-label">Pending Review</div></div>
   </div>
-  <div class="stat-card" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);">
-    <div class="stat-icon">📋</div>
-    <div><div class="stat-num">{{ waitlisted_count }}</div><div class="stat-label">In Queue</div></div>
-  </div>
+
   <div class="stat-card approved">
     <div class="stat-icon">🕒</div>
     <div><div class="stat-num">{{ approved }}</div><div class="stat-label">Approved</div></div>
@@ -101,7 +98,7 @@
 
 <!-- Quick links -->
 <div class="quick-actions">
-  <a href="{% url 'admin_waiting_queue' %}" class="btn btn-primary">📋 Manage Queue</a>
+
   <a href="{% url 'admin_requests' %}?status=pending" class="btn btn-ghost">⏳ Pending</a>
   <a href="{% url 'admin_gadget_add' %}" class="btn btn-ghost">+ Add Gadget</a>
 </div>

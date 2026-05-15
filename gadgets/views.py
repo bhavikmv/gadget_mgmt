@@ -14,12 +14,10 @@ from django.utils import timezone
 from django.core.cache import cache
 from django.db import transaction
 
-from .models import Category, Gadget, Request, RequestItem, WaitingQueue
+from .models import Category, Gadget, Request, RequestItem
 from .forms import CategoryForm, GadgetForm, RequestForm, RequestFormSet, WaitlistForm
 from .services import (
     calculate_next_available_date,
-    calculate_queue_estimated_date,
-    process_queue_after_return,
     get_gadget_stats,
 )
 from accounts.models import Student
@@ -48,27 +46,13 @@ def dashboard_view(request):
         .filter(student=request.user)
         .prefetch_related('items__gadget')
     )
-    waiting_list = (
-        WaitingQueue.objects
-        .filter(student=request.user)
-        .select_related('gadget__category')
-    )
 
-    # Annotate waiting list with estimated availability
-    enriched_waiting = []
-    for wq in waiting_list:
-        est = calculate_queue_estimated_date(wq.gadget, wq.quantity, wq.queue_position)
-        enriched_waiting.append({
-            'wq': wq,
-            'estimated_date': est,
-        })
 
     gadgets = Gadget.objects.filter(is_active=True)
 
     context = {
         'requests': requests_list,
-        'waiting_list': waiting_list,
-        'enriched_waiting': enriched_waiting,
+
         'gadgets': gadgets,
         'pending': requests_list.filter(status='pending'),
         'waitlisted': requests_list.filter(status='waitlisted'),
@@ -178,7 +162,7 @@ def gadget_detail_api(request, gadget_id):
             'reserved': g.reserved_quantity,
             'issued': g.issued_quantity,
             'next_available_date': next_date.strftime('%d %b %Y') if next_date else None,
-            'waitlist_count': g.waitlist_count(),
+
             'status': g.stock_status(),
         })
     except Gadget.DoesNotExist:
@@ -192,7 +176,7 @@ def admin_dashboard_view(request):
     pending = Request.objects.filter(status='pending').count()
     approved = Request.objects.filter(status='approved').count()
     ready = Request.objects.filter(status='ready').count()
-    waitlisted_count = WaitingQueue.objects.filter(notified=False).count()
+
     total_gadgets = Gadget.objects.filter(is_active=True).count()
     total_students = Student.objects.count()
 
@@ -213,7 +197,7 @@ def admin_dashboard_view(request):
         'pending': pending,
         'approved': approved,
         'ready': ready,
-        'waitlisted_count': waitlisted_count,
+
         'total_gadgets': total_gadgets,
         'total_students': total_students,
         'overdue': overdue,
@@ -346,14 +330,7 @@ def admin_mark_returned(request, pk):
                     gadget.issued_quantity = max(0, gadget.issued_quantity - item.quantity)
                     gadget.save(update_fields=['issued_quantity'])
 
-                    # Process queue: notify first eligible waiter
-                    notified = process_queue_after_return(gadget)
-                    for wq in notified:
-                        messages.info(
-                            request,
-                            f'🔔 {wq.student.get_full_name()} (#{wq.queue_position}) '
-                            f'has been notified – stock available for {wq.gadget.name}.'
-                        )
+
 
             messages.success(request, f'🔄 Request #{req.id} returned. Stock restored.')
         else:
@@ -361,85 +338,7 @@ def admin_mark_returned(request, pk):
     return redirect('admin_request_detail', pk=pk)
 
 
-# ─── ADMIN WAITING QUEUE MANAGEMENT ──────────────────────────────────────────
 
-@user_passes_test(is_admin, login_url='/login/')
-def admin_waiting_queue_view(request):
-    """Paginated view of all waiting queue entries grouped by gadget."""
-    gadget_filter = request.GET.get('gadget', '')
-    queue_entries = (
-        WaitingQueue.objects
-        .select_related('student', 'gadget__category')
-        .order_by('gadget', 'queue_position')
-    )
-    if gadget_filter:
-        queue_entries = queue_entries.filter(gadget_id=gadget_filter)
-
-    # Enrich with estimated dates
-    enriched = []
-    for wq in queue_entries:
-        est = calculate_queue_estimated_date(wq.gadget, wq.quantity, wq.queue_position)
-        enriched.append({'wq': wq, 'estimated_date': est})
-
-    gadgets_with_queue = Gadget.objects.filter(waiting_queues__isnull=False).distinct()
-
-    return render(request, 'admin_panel/waiting_queue.html', {
-        'enriched': enriched,
-        'gadgets_with_queue': gadgets_with_queue,
-        'gadget_filter': gadget_filter,
-        'total': queue_entries.count(),
-    })
-
-
-@user_passes_test(is_admin, login_url='/login/')
-def admin_approve_queue_entry(request, pk):
-    """Approve a waiting queue entry: convert it to a pending Request."""
-    wq = get_object_or_404(WaitingQueue, pk=pk)
-    if request.method == 'POST':
-        with transaction.atomic():
-            gadget = Gadget.objects.select_for_update().get(pk=wq.gadget.pk)
-            if gadget.available_quantity >= wq.quantity:
-                days = wq.duration_days or 7
-                start = date.today()
-                end = start + timedelta(days=days - 1)
-
-                gadget.reserved_quantity += wq.quantity
-                gadget.save(update_fields=['reserved_quantity'])
-
-                req = Request.objects.create(
-                    student=wq.student,
-                    status='approved',
-                    expected_issue_date=start,
-                    expected_return_date=end,
-                    admin_notes='Approved from waiting queue.',
-                )
-                RequestItem.objects.create(request=req, gadget=gadget, quantity=wq.quantity)
-                wq.delete()
-
-                messages.success(
-                    request,
-                    f'✅ Queue entry approved → Request #{req.id} created for '
-                    f'{wq.student.get_full_name()} ({wq.gadget.name}).'
-                )
-            else:
-                messages.error(
-                    request,
-                    f'Not enough stock for {wq.gadget.name}. '
-                    f'Available: {gadget.available_quantity}, needed: {wq.quantity}.'
-                )
-    return redirect('admin_waiting_queue')
-
-
-@user_passes_test(is_admin, login_url='/login/')
-def admin_reject_queue_entry(request, pk):
-    """Remove a student from the waiting queue."""
-    wq = get_object_or_404(WaitingQueue, pk=pk)
-    if request.method == 'POST':
-        name = wq.student.get_full_name()
-        gadget_name = wq.gadget.name
-        wq.delete()
-        messages.success(request, f'🗑️ Removed {name} from waitlist for {gadget_name}.')
-    return redirect('admin_waiting_queue')
 
 
 # ─── ADMIN GADGET & CATEGORY VIEWS ───────────────────────────────────────────
