@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% block title %}QR Scanner - GadgetMS{% endblock %}
 {% block nav_admin %}active{% endblock %}
@@ -35,14 +36,20 @@
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        // Stop the camera on success and redirect to request page
+        // Stop the camera on success
         html5QrcodeScanner.clear().then(() => {
-          if (data.request_id) {
-              window.location.href = `/admin-panel/requests/${data.request_id}/`;
-          } else {
-              // Fallback just in case
-              window.location.reload();
-          }
+          // Show pop message
+          alert(data.message);
+          
+          // Display success result and a button to restart
+          resultDiv.innerHTML = `
+            <div style="background: rgba(76,175,130,0.1); border: 1px solid var(--success); color: var(--success); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+              <strong>Success!</strong><br> ${data.message}
+            </div>
+            <button class="btn btn-primary" onclick="window.location.reload()" style="width: 100%; justify-content: center;">
+              Scan Another QR Code
+            </button>
+          `;
         }).catch(err => console.log("Failed to clear scanner", err));
 
       } else {
