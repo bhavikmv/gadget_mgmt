@@ -41,26 +41,48 @@ except ImportError:
 
 @login_required
 def dashboard_view(request):
-    requests_list = (
+    requests_list = list(
         Request.objects
         .filter(student=request.user)
         .select_related('qr_code')
         .prefetch_related('items__gadget')
     )
 
+    # Retroactive QR Code generator
+    from qr_management.models import QRCode
+    for r in requests_list:
+        if r.status in ['approved', 'ready', 'issued']:
+            qr_exists = True
+            try:
+                qr = r.qr_code
+            except Exception:
+                qr_exists = False
+            
+            if not qr_exists:
+                qr = QRCode(request=r)
+                qr.generate_qr()
+                qr.save()
+                r.qr_code = qr
 
     gadgets = Gadget.objects.filter(is_active=True)
 
+    # Re-evaluate filters from modified requests_list
+    pending = [r for r in requests_list if r.status == 'pending']
+    waitlisted = [r for r in requests_list if r.status == 'waitlisted']
+    approved = [r for r in requests_list if r.status == 'approved']
+    ready = [r for r in requests_list if r.status == 'ready']
+    issued = [r for r in requests_list if r.status == 'issued']
+    returned = [r for r in requests_list if r.status == 'returned']
+
     context = {
         'requests': requests_list,
-
         'gadgets': gadgets,
-        'pending': requests_list.filter(status='pending'),
-        'waitlisted': requests_list.filter(status='waitlisted'),
-        'approved': requests_list.filter(status='approved'),
-        'ready': requests_list.filter(status='ready'),
-        'issued': requests_list.filter(status='issued'),
-        'returned': requests_list.filter(status='returned'),
+        'pending': pending,
+        'waitlisted': waitlisted,
+        'approved': approved,
+        'ready': ready,
+        'issued': issued,
+        'returned': returned,
     }
     return render(request, 'student/dashboard.html', context)
 
@@ -231,6 +253,21 @@ def admin_request_detail(request, pk):
         Request.objects.select_related('student__student_profile', 'qr_code').prefetch_related('items__gadget'),
         pk=pk,
     )
+    
+    # Retroactive QR Code generation helper
+    qr_exists = True
+    try:
+        qr = req.qr_code
+    except Exception:
+        qr_exists = False
+
+    if req.status in ['approved', 'ready', 'issued'] and not qr_exists:
+        from qr_management.models import QRCode
+        qr = QRCode(request=req)
+        qr.generate_qr()
+        qr.save()
+        req.qr_code = qr
+
     return render(request, 'admin_panel/request_detail.html', {'req': req, 'today': date.today()})
 
 
@@ -241,16 +278,16 @@ def admin_approve_request(request, pk):
     req = get_object_or_404(Request, pk=pk)
     if request.method == 'POST':
         if req.status == 'pending':
-            req.status = 'approved'
-            req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
-            req.save()
-            
-            # Generate QR Code
+            # Generate QR Code first, so it exists before the signal is triggered
             from qr_management.models import QRCode
             qr, created = QRCode.objects.get_or_create(request=req)
             if created or not qr.qr_image:
                 qr.generate_qr()
                 qr.save()
+
+            req.status = 'approved'
+            req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
+            req.save()
                 
             messages.success(request, f'✅ Request #{req.id} approved and QR Code generated.')
         else:
