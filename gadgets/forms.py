@@ -21,11 +21,20 @@ class GadgetForm(forms.ModelForm):
         }
 
 
+from django.db.models import F
+
+class GadgetChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"{obj.name} (Remaining: {obj.available_quantity} / Total: {obj.total_quantity})"
+
+
 class RequestForm(forms.Form):
     """Single-gadget request form (simplified, no formset)."""
 
-    gadget = forms.ModelChoiceField(
-        queryset=Gadget.objects.filter(is_active=True),
+    gadget = GadgetChoiceField(
+        queryset=Gadget.objects.filter(is_active=True).annotate(
+            calculated_available=F('total_quantity') - F('reserved_quantity') - F('issued_quantity')
+        ).filter(calculated_available__gt=0),
         empty_label='— Select a Gadget —',
         widget=forms.Select(attrs={'class': 'form-control gadget-select', 'id': 'gadget-select'}),
     )
