@@ -45,7 +45,9 @@ body {
   display: flex;
   flex-direction: column;
   position: fixed;
-  height: 100vh;
+  top: 0;
+  left: 0;
+  height: 100dvh; /* dynamic viewport height to fix mobile browser URL bar cutoff */
   z-index: 1000;
   overflow-y: auto;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
