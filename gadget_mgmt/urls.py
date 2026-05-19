@@ -9,4 +9,7 @@ urlpatterns = [
 
     # Gadgets and core student/admin routes handled by gadgets app
     path('', include('gadgets.urls')),
+    
+    # QR Management routes
+    path('qr/', include('qr_management.urls', namespace='qr_management')),
 ]

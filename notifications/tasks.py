@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def send_notification_email_task(self, request_id, email_type):
     try:
         logger.info(f"Starting email task for request {request_id}, type {email_type}")
-        req = Request.objects.select_related('student').prefetch_related('items__gadget').get(id=request_id)
+        req = Request.objects.select_related('student', 'qr_code').prefetch_related('items__gadget').get(id=request_id)
         
         templates = {
             'placed': ('Gadget Request Placed Successfully', 'notifications/emails/request_placed.html'),

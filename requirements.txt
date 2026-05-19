@@ -13,3 +13,4 @@ django-redis
 django-anymail[sendinblue]
 cloudinary
 django-cloudinary-storage
+qrcode

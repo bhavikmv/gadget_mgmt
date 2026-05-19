@@ -44,6 +44,7 @@ def dashboard_view(request):
     requests_list = (
         Request.objects
         .filter(student=request.user)
+        .select_related('qr_code')
         .prefetch_related('items__gadget')
     )
 
@@ -212,7 +213,7 @@ def admin_requests_view(request):
     status_filter = request.GET.get('status', '')
     requests_list = (
         Request.objects
-        .select_related('student')
+        .select_related('student', 'qr_code')
         .prefetch_related('items__gadget')
         .all()
     )
@@ -227,7 +228,7 @@ def admin_requests_view(request):
 @user_passes_test(is_admin, login_url='/login/')
 def admin_request_detail(request, pk):
     req = get_object_or_404(
-        Request.objects.select_related('student__student_profile').prefetch_related('items__gadget'),
+        Request.objects.select_related('student__student_profile', 'qr_code').prefetch_related('items__gadget'),
         pk=pk,
     )
     return render(request, 'admin_panel/request_detail.html', {'req': req, 'today': date.today()})
@@ -243,7 +244,15 @@ def admin_approve_request(request, pk):
             req.status = 'approved'
             req.admin_notes = request.POST.get('admin_notes', req.admin_notes)
             req.save()
-            messages.success(request, f'✅ Request #{req.id} approved.')
+            
+            # Generate QR Code
+            from qr_management.models import QRCode
+            qr, created = QRCode.objects.get_or_create(request=req)
+            if created or not qr.qr_image:
+                qr.generate_qr()
+                qr.save()
+                
+            messages.success(request, f'✅ Request #{req.id} approved and QR Code generated.')
         else:
             messages.warning(request, 'Can only approve pending requests.')
     return redirect('admin_request_detail', pk=pk)

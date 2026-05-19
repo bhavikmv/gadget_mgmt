@@ -33,6 +33,13 @@
                 You can now proceed to collect the gadget(s) from the management office.
             </div>
 
+            {% if req.qr_code and req.qr_code.qr_image %}
+            <div style="text-align: center; margin: 20px 0;">
+                <p style="font-weight: bold; margin-bottom: 10px; color: #27ae60;">Show this QR Code at the counter to collect your gadgets:</p>
+                <img src="{{ req.qr_code.qr_image.url }}" alt="Collection QR Code" style="max-width: 200px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; background: white;">
+            </div>
+            {% endif %}
+
             <div class="details">
                 <h3>Approval Details</h3>
                 <p><strong>Request ID:</strong> #{{ req.id }}</p>

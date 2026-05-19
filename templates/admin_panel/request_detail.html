@@ -222,6 +222,17 @@
       <div class="info-row"><span class="lbl">Last Updated</span><span>{{ req.updated_at|date:"d M Y, H:i" }}</span></div>
       <div class="info-row"><span class="lbl">Status</span><span class="badge badge-{{ req.status }}">{{ req.get_status_display }}</span></div>
     </div>
+    
+    {% if req.qr_code and req.qr_code.qr_image %}
+    <!-- QR Code Card -->
+    <div class="card" style="text-align: center;">
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">QR Code</h3>
+      <img src="{{ req.qr_code.qr_image.url }}" alt="QR Code" style="max-width: 150px; border-radius: 8px;">
+      {% if not req.qr_code.is_active %}
+        <div style="color: #ef4444; font-size: 12px; margin-top: 8px; font-weight: bold;">Inactive (Used)</div>
+      {% endif %}
+    </div>
+    {% endif %}
 
   </div>
 </div>

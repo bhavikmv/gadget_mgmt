@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'gadgets',
     'notifications',
     'anymail',
+    'qr_management',
 ]
 
 MIDDLEWARE = [

@@ -175,6 +175,14 @@
           <td>
             <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
             {% if r.is_overdue %}<span class="overdue-tag">Overdue</span>{% endif %}
+            
+            {% if r.qr_code and r.qr_code.is_active and r.qr_code.qr_image %}
+              <div style="margin-top: 8px;">
+                <a href="{{ r.qr_code.qr_image.url }}" target="_blank" class="btn btn-sm" style="padding: 4px 8px; font-size: 11px; background: var(--bg2); border: 1px solid var(--border);">
+                  View QR
+                </a>
+              </div>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

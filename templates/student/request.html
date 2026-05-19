@@ -98,6 +98,7 @@
             <div class="form-group">
               <label class="form-label">Quantity *</label>
               {{ form.quantity }}
+              <div class="gadget-stock-info" style="font-size: 11px; margin-top: 4px; font-weight: 500;"></div>
               {% if form.quantity.errors %}<div class="form-error">{{ form.quantity.errors.0 }}</div>{% endif %}
             </div>
           </div>
@@ -164,9 +165,44 @@
 </div>
 
 <script>
+  function attachGadgetChangeHandler(row) {
+    const select = row.querySelector('.gadget-select');
+    const infoDiv = row.querySelector('.gadget-stock-info');
+    const qtyInput = row.querySelector('.qty-input');
+    
+    if (select && infoDiv) {
+      select.addEventListener('change', function() {
+        const gadgetId = this.value;
+        if (gadgetId) {
+          fetch(`/api/gadget/${gadgetId}/`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.available !== undefined) {
+                infoDiv.innerHTML = `<span style="color:var(--text2)">Available in store:</span> <span style="color: #4ade80">${data.available}</span> <span style="color:var(--text2)">/ Total: ${data.total_quantity}</span>`;
+                if (qtyInput) {
+                    qtyInput.max = data.available;
+                }
+              }
+            })
+            .catch(error => {
+                console.error('Error fetching gadget stock:', error);
+                infoDiv.textContent = '';
+            });
+        } else {
+          infoDiv.textContent = '';
+        }
+      });
+    }
+  }
+
   const container = document.getElementById('formset-container');
   const addBtn = document.getElementById('add-form');
   const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+
+  // Attach to existing rows
+  document.querySelectorAll('.formset-row').forEach(row => {
+    attachGadgetChangeHandler(row);
+  });
 
   if (addBtn) {
     addBtn.addEventListener('click', () => {
@@ -195,8 +231,15 @@
         if (error) error.remove();
       });
 
+      // Clear stock info in cloned row
+      const infoDiv = newForm.querySelector('.gadget-stock-info');
+      if (infoDiv) infoDiv.textContent = '';
+
       container.appendChild(newForm);
       totalForms.value = count + 1;
+      
+      // Attach handler to new row
+      attachGadgetChangeHandler(newForm);
     });
   }
 
@@ -204,9 +247,19 @@
   const params = new URLSearchParams(window.location.search);
   const preGadget = params.get('gadget');
   if (preGadget) {
-    const firstSelect = container.querySelector('select');
-    if (firstSelect) firstSelect.value = preGadget;
+    const firstSelect = container.querySelector('.gadget-select');
+    if (firstSelect) {
+      firstSelect.value = preGadget;
+      firstSelect.dispatchEvent(new Event('change'));
+    }
+  } else {
+    // If there's already a selected value (e.g. form error reload or default), load stock info
+    const firstSelect = container.querySelector('.gadget-select');
+    if (firstSelect && firstSelect.value) {
+      firstSelect.dispatchEvent(new Event('change'));
+    }
   }
+
   if (params.get('waitlist') === '1') {
     const firstWaitlist = container.querySelector('input[type="checkbox"]');
     if (firstWaitlist) firstWaitlist.checked = true;

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}QR Scanner - GadgetMS{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>QR Scanner</h1>
+  <p>Scan a Gadget Request QR code to automatically issue or return gadgets.</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+  <div id="reader" style="width: 100%;"></div>
+  <div id="scan-result" style="margin-top: 20px; font-weight: bold; text-align: center;"></div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+  let isProcessing = false;
+
+  function onScanSuccess(decodedText, decodedResult) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    const resultDiv = document.getElementById('scan-result');
+    resultDiv.innerHTML = '<span style="color: blue;">Processing QR code...</span>';
+
+    fetch("{% url 'qr_management:process_scan' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}"
+      },
+      body: JSON.stringify({ qr_data: decodedText })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        resultDiv.innerHTML = `<span style="color: green;">${data.message}</span>`;
+      } else {
+        resultDiv.innerHTML = `<span style="color: red;">${data.message}</span>`;
+      }
+      setTimeout(() => { isProcessing = false; }, 3000); // 3 second cooldown
+    })
+    .catch(error => {
+      resultDiv.innerHTML = `<span style="color: red;">Error processing scan.</span>`;
+      setTimeout(() => { isProcessing = false; }, 3000);
+    });
+  }
+
+  function onScanFailure(error) {
+    // Handle scan failure, usually better to ignore and keep scanning
+  }
+
+  let html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader",
+    { fps: 10, qrbox: {width: 250, height: 250} },
+    /* verbose= */ false);
+  html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+</script>
+{% endblock %}
