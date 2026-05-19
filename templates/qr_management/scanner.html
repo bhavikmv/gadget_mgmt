@@ -35,11 +35,27 @@
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        resultDiv.innerHTML = `<span style="color: green;">${data.message}</span>`;
+        // Stop the camera on success
+        html5QrcodeScanner.clear().then(() => {
+          // Show pop message
+          alert(data.message);
+          
+          // Display success result and a button to restart
+          resultDiv.innerHTML = `
+            <div style="background: rgba(76,175,130,0.1); border: 1px solid var(--success); color: var(--success); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+              <strong>Success!</strong><br> ${data.message}
+            </div>
+            <button class="btn btn-primary" onclick="window.location.reload()" style="width: 100%; justify-content: center;">
+              Scan Another QR Code
+            </button>
+          `;
+        }).catch(err => console.log("Failed to clear scanner", err));
+
       } else {
+        // Only cooldown on failure so they can try again
         resultDiv.innerHTML = `<span style="color: red;">${data.message}</span>`;
+        setTimeout(() => { isProcessing = false; }, 3000); 
       }
-      setTimeout(() => { isProcessing = false; }, 3000); // 3 second cooldown
     })
     .catch(error => {
       resultDiv.innerHTML = `<span style="color: red;">Error processing scan.</span>`;
