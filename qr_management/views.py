@@ -57,7 +57,7 @@ def process_qr_scan(request):
                     gadget.save(update_fields=['reserved_quantity', 'issued_quantity'])
                     
                 ScanLog.objects.create(request=req, scan_type='issue', scanned_by=request.user)
-                return JsonResponse({'success': True, 'message': f'Gadgets successfully ISSUED for Request #{req.id}.'})
+                return JsonResponse({'success': True, 'message': f'Gadgets successfully ISSUED for Request #{req.id}.', 'request_id': req.id})
                 
             elif req.status == 'issued':
                 # SECOND SCAN: Return Gadget
@@ -74,7 +74,7 @@ def process_qr_scan(request):
                 qr_obj.save(update_fields=['is_active'])
                 
                 ScanLog.objects.create(request=req, scan_type='return', scanned_by=request.user)
-                return JsonResponse({'success': True, 'message': f'Gadgets successfully RETURNED for Request #{req.id}.'})
+                return JsonResponse({'success': True, 'message': f'Gadgets successfully RETURNED for Request #{req.id}.', 'request_id': req.id})
                 
             else:
                 return JsonResponse({'success': False, 'message': f'Cannot process request with status: {req.status}.'})

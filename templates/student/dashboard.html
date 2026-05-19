@@ -71,27 +71,27 @@
 <div class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap:10px; margin-bottom:20px;">
   <div class="stat-card pending">
     <div class="stat-icon">⏳</div>
-    <div><div class="stat-num">{{ pending.count }}</div><div class="stat-label">Pending</div></div>
+    <div><div class="stat-num">{{ pending|length }}</div><div class="stat-label">Pending</div></div>
   </div>
   <div class="stat-card waitlisted">
     <div class="stat-icon">📋</div>
-    <div><div class="stat-num">{{ waiting_list.count }}</div><div class="stat-label">Waiting</div></div>
+    <div><div class="stat-num">{{ waitlisted|length }}</div><div class="stat-label">Waiting</div></div>
   </div>
   <div class="stat-card approved">
     <div class="stat-icon">🕒</div>
-    <div><div class="stat-num">{{ approved.count }}</div><div class="stat-label">Approved</div></div>
+    <div><div class="stat-num">{{ approved|length }}</div><div class="stat-label">Approved</div></div>
   </div>
   <div class="stat-card ready">
     <div class="stat-icon">📦</div>
-    <div><div class="stat-num">{{ ready.count }}</div><div class="stat-label">Ready</div></div>
+    <div><div class="stat-num">{{ ready|length }}</div><div class="stat-label">Ready</div></div>
   </div>
   <div class="stat-card issued">
     <div class="stat-icon">✅</div>
-    <div><div class="stat-num">{{ issued.count }}</div><div class="stat-label">Issued</div></div>
+    <div><div class="stat-num">{{ issued|length }}</div><div class="stat-label">Issued</div></div>
   </div>
   <div class="stat-card returned">
     <div class="stat-icon">🔄</div>
-    <div><div class="stat-num">{{ returned.count }}</div><div class="stat-label">Returned</div></div>
+    <div><div class="stat-num">{{ returned|length }}</div><div class="stat-label">Returned</div></div>
   </div>
 </div>
 
