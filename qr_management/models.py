@@ -18,7 +18,7 @@ class QRCode(models.Model):
 
     def generate_qr(self):
         if not self.secure_token:
-            self.secure_token = uuid.uuid4().hex
+            self.secure_token = uuid.uuid4().hex[:12]
         
         qr_data = f"REQ{self.request.id}_{self.secure_token}"
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -31,6 +31,11 @@ class QRCode(models.Model):
         buffer.seek(0)
         file_name = f'qr_req_{self.request.id}_{self.secure_token[:6]}.png'
         self.qr_image.save(file_name, File(buffer), save=False)
+
+    def save(self, *args, **kwargs):
+        if not self.secure_token:
+            self.secure_token = uuid.uuid4().hex[:12]
+        super().save(*args, **kwargs)
 
 
 class ScanLog(models.Model):
