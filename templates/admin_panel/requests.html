@@ -48,8 +48,7 @@
   .req-card-actions form button { width: 100%; justify-content: center; }
 
   @media (max-width: 768px) {
-    .req-mobile-card { display: block; }
-    .req-desktop-table { display: none; }
+    /* Table remains visible on mobile */
   }
 
   /* Scrollable tabs on all sizes */
@@ -109,11 +108,11 @@
           </td>
           <td>
             {% for item in r.items.all %}
-              <div style="font-size:13px;white-space:nowrap;">{{ item.quantity }}× {{ item.gadget.name }}</div>
+              <div style="font-size:13px;">{{ item.quantity }}× {{ item.gadget.name }}</div>
             {% endfor %}
           </td>
           <td style="font-size:12px;color:var(--text2);white-space:nowrap;">{{ r.created_at|date:"d M Y" }}</td>
-          <td style="font-size:12px;white-space:nowrap;">
+          <td style="font-size:12px;">
             <span style="color:var(--text2);">Issue:</span> {{ r.expected_issue_date|date:"d M Y"|default:"–" }}<br>
             <span style="color:var(--text2);">Return:</span> {{ r.expected_return_date|date:"d M Y"|default:"–" }}
           </td>
