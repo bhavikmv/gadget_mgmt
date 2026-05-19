@@ -28,6 +28,7 @@ class QRCode(models.Model):
         img = qr.make_image(fill_color="black", back_color="white")
         buffer = BytesIO()
         img.save(buffer, format="PNG")
+        buffer.seek(0)
         file_name = f'qr_req_{self.request.id}_{self.secure_token[:6]}.png'
         self.qr_image.save(file_name, File(buffer), save=False)
 
