@@ -60,7 +60,7 @@ class RequestForm(forms.Form):
 
         if quantity and quantity > 10:
             raise forms.ValidationError(
-                f'You cannot request more than 10 units of a gadget.'
+                "You have already requested maximum gadgets."
             )
 
         if gadget and quantity:
@@ -87,30 +87,38 @@ class BaseRequestFormSet(BaseFormSet):
         if any(self.errors):
             return
 
-        total_requested = 0
+        gadgets_seen = set()
         for form in self.forms:
             if not form.cleaned_data or form.cleaned_data.get('DELETE'):
                 continue
+            
+            gadget = form.cleaned_data.get('gadget')
             quantity = form.cleaned_data.get('quantity', 0)
-            total_requested += quantity
 
-        if total_requested > 10:
-            raise forms.ValidationError(
-                "You cannot request more than 10 gadgets in a single request."
-            )
-
-        if self.user:
-            from gadgets.models import RequestItem
-            active_items = RequestItem.objects.filter(
-                request__student=self.user,
-                request__status__in=['pending', 'approved', 'ready', 'issued']
-            ).aggregate(total=Sum('quantity'))['total'] or 0
-
-            if active_items + total_requested > 10:
+            if quantity > 10:
                 raise forms.ValidationError(
-                    f"You have {active_items} active gadgets requested/issued. "
-                    f"Adding {total_requested} more would exceed your limit of 10 active gadgets."
+                    "You have already requested maximum gadgets."
                 )
+
+            if gadget:
+                if gadget.id in gadgets_seen:
+                    raise forms.ValidationError(
+                        "Duplicate gadget types are not allowed."
+                    )
+                gadgets_seen.add(gadget.id)
+
+                if self.user:
+                    from gadgets.models import RequestItem
+                    active_qty = RequestItem.objects.filter(
+                        request__student=self.user,
+                        request__status__in=['pending', 'approved', 'ready', 'issued'],
+                        gadget=gadget
+                    ).aggregate(total=Sum('quantity'))['total'] or 0
+
+                    if active_qty + quantity > 10:
+                        raise forms.ValidationError(
+                            "You have already requested maximum gadgets."
+                        )
 
 RequestFormSet = formset_factory(RequestForm, formset=BaseRequestFormSet, extra=1)
 

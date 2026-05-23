@@ -127,7 +127,7 @@
       <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📋 Request Rules</h3>
       <ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2.2;">
         <li>✅ Max duration: <strong style="color:var(--text)">15 days</strong></li>
-        <li>✅ Max limit: <strong style="color:var(--text)">10 active gadgets</strong> per student</li>
+        <li>✅ Max limit: <strong style="color:var(--text)">10 active units</strong> per gadget type</li>
         <li>✅ Stock checked before submission</li>
         <li>✅ Request blocked if stock is insufficient</li>
         <li>✅ All requests reviewed by admin</li>
@@ -162,8 +162,7 @@
       </div>
     </div>
 
-  </div>
-</div>
+{{ active_quantities|json_script:"active-quantities-data" }}
 
 <script>
   function attachGadgetChangeHandler(row) {
@@ -264,6 +263,86 @@
   if (params.get('waitlist') === '1') {
     const firstWaitlist = container.querySelector('input[type="checkbox"]');
     if (firstWaitlist) firstWaitlist.checked = true;
+  }
+
+  // Frontend validation on form submission
+  const requestForm = document.getElementById('request-form');
+  if (requestForm) {
+    requestForm.addEventListener('submit', function(event) {
+      // Remove any previously rendered frontend errors
+      document.querySelectorAll('.frontend-error').forEach(el => el.remove());
+      
+      let hasError = false;
+      const gadgetsSeen = new Set();
+      
+      // Parse active quantities from JSON block
+      const activeQuantities = JSON.parse(document.getElementById('active-quantities-data').textContent || '{}');
+      
+      const rows = document.querySelectorAll('.formset-row');
+      rows.forEach(row => {
+        const select = row.querySelector('.gadget-select');
+        const qtyInput = row.querySelector('.qty-input');
+        
+        if (select && qtyInput) {
+          const gadgetId = select.value;
+          const qtyVal = parseInt(qtyInput.value, 10) || 0;
+          
+          // 1. Quantity Validation (Rule 1 & 3: total_requested = active + new <= 10)
+          if (qtyVal > 10) {
+            hasError = true;
+            const errDiv = document.createElement('div');
+            errDiv.className = 'form-error frontend-error';
+            errDiv.textContent = 'You have already requested maximum gadgets.';
+            qtyInput.parentNode.appendChild(errDiv);
+          } else if (gadgetId) {
+            const previousQty = parseInt(activeQuantities[gadgetId], 10) || 0;
+            if (previousQty + qtyVal > 10) {
+              hasError = true;
+              const errDiv = document.createElement('div');
+              errDiv.className = 'form-error frontend-error';
+              errDiv.textContent = 'You have already requested maximum gadgets.';
+              qtyInput.parentNode.appendChild(errDiv);
+            }
+          }
+          
+          // 2. Duplicate Validation (Rule 2)
+          if (gadgetId) {
+            if (gadgetsSeen.has(gadgetId)) {
+              hasError = true;
+              const errDiv = document.createElement('div');
+              errDiv.className = 'form-error frontend-error';
+              errDiv.textContent = 'Duplicate gadget types are not allowed.';
+              select.parentNode.appendChild(errDiv);
+            } else {
+              gadgetsSeen.add(gadgetId);
+            }
+          }
+        }
+      });
+      
+      if (hasError) {
+        event.preventDefault();
+        
+        // Render a top level alert-danger if it does not already exist
+        let topAlert = document.getElementById('frontend-top-alert');
+        if (!topAlert) {
+          topAlert = document.createElement('div');
+          topAlert.id = 'frontend-top-alert';
+          topAlert.className = 'alert alert-danger frontend-error';
+          topAlert.style.marginBottom = '20px';
+          topAlert.textContent = 'Please fix the validation errors below and try again.';
+          
+          // Insert above the formset-container
+          const container = document.getElementById('formset-container');
+          if (container) {
+            container.parentNode.insertBefore(topAlert, container);
+          }
+        }
+        
+        // Scroll to the top of the form
+        requestForm.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
   }
 </script>
 {% endblock %}

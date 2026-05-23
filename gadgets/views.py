@@ -93,6 +93,17 @@ def request_gadget_view(request):
     today = date.today()
     gadgets = Gadget.objects.filter(is_active=True).select_related('category')
 
+    active_quantities = {}
+    if request.user.is_authenticated:
+        from django.db.models import Sum
+        from gadgets.models import RequestItem
+        items = RequestItem.objects.filter(
+            request__student=request.user,
+            request__status__in=['pending', 'approved', 'ready', 'issued']
+        ).values('gadget_id').annotate(total=Sum('quantity'))
+        for item in items:
+            active_quantities[item['gadget_id']] = item['total']
+
     if request.method == 'POST':
         formset = RequestFormSet(request.POST, user=request.user)
         if formset.is_valid():
@@ -146,6 +157,7 @@ def request_gadget_view(request):
         'formset': formset,
         'gadgets': gadgets,
         'today': today,
+        'active_quantities': active_quantities,
     })
 
 
