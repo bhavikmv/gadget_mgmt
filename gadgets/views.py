@@ -94,7 +94,7 @@ def request_gadget_view(request):
     gadgets = Gadget.objects.filter(is_active=True).select_related('category')
 
     if request.method == 'POST':
-        formset = RequestFormSet(request.POST)
+        formset = RequestFormSet(request.POST, user=request.user)
         if formset.is_valid():
             req = None
             created_request = False
@@ -140,7 +140,7 @@ def request_gadget_view(request):
         else:
             messages.error(request, 'Please fix the errors below and try again.')
     else:
-        formset = RequestFormSet()
+        formset = RequestFormSet(user=request.user)
 
     return render(request, 'student/request.html', {
         'formset': formset,

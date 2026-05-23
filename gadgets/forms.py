@@ -21,7 +21,7 @@ class GadgetForm(forms.ModelForm):
         }
 
 
-from django.db.models import F
+from django.db.models import F, Sum
 
 class GadgetChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
@@ -39,7 +39,7 @@ class RequestForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control gadget-select', 'id': 'gadget-select'}),
     )
     days = forms.ChoiceField(
-        choices=[(i, f'{i} day{"s" if i > 1 else ""}') for i in range(1, 31)],
+        choices=[(i, f'{i} day{"s" if i > 1 else ""}') for i in range(1, 16)],
         initial=7,
         widget=forms.Select(attrs={'class': 'form-control days-input', 'id': 'days-select'}),
     )
@@ -58,6 +58,11 @@ class RequestForm(forms.Form):
         gadget = cleaned.get('gadget')
         quantity = cleaned.get('quantity')
 
+        if quantity and quantity > 10:
+            raise forms.ValidationError(
+                f'You cannot request more than 10 units of a gadget.'
+            )
+
         if gadget and quantity:
             if quantity > gadget.total_quantity:
                 raise forms.ValidationError(
@@ -74,9 +79,38 @@ class RequestForm(forms.Form):
 from django.forms import formset_factory, BaseFormSet
 
 class BaseRequestFormSet(BaseFormSet):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
     def clean(self):
         if any(self.errors):
             return
+
+        total_requested = 0
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get('DELETE'):
+                continue
+            quantity = form.cleaned_data.get('quantity', 0)
+            total_requested += quantity
+
+        if total_requested > 10:
+            raise forms.ValidationError(
+                "You cannot request more than 10 gadgets in a single request."
+            )
+
+        if self.user:
+            from gadgets.models import RequestItem
+            active_items = RequestItem.objects.filter(
+                request__student=self.user,
+                request__status__in=['pending', 'approved', 'ready', 'issued']
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+
+            if active_items + total_requested > 10:
+                raise forms.ValidationError(
+                    f"You have {active_items} active gadgets requested/issued. "
+                    f"Adding {total_requested} more would exceed your limit of 10 active gadgets."
+                )
 
 RequestFormSet = formset_factory(RequestForm, formset=BaseRequestFormSet, extra=1)
 
@@ -85,8 +119,8 @@ RequestFormSet = formset_factory(RequestForm, formset=BaseRequestFormSet, extra=
 class WaitlistForm(forms.Form):
     """Minimal form for joining a waitlist directly from the gadget card."""
     gadget = forms.ModelChoiceField(queryset=Gadget.objects.filter(is_active=True))
-    quantity = forms.IntegerField(min_value=1, initial=1)
-    days = forms.IntegerField(min_value=1, max_value=30, initial=7)
+    quantity = forms.IntegerField(min_value=1, max_value=10, initial=1)
+    days = forms.IntegerField(min_value=1, max_value=15, initial=7)
 
 
 class IssueRequestForm(forms.Form):
