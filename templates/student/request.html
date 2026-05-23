@@ -292,7 +292,7 @@
             hasError = true;
             const errDiv = document.createElement('div');
             errDiv.className = 'form-error frontend-error';
-            errDiv.textContent = 'You have already requested maximum gadgets.';
+            errDiv.textContent = 'Maximum 10 quantity allowed per gadget.';
             qtyInput.parentNode.appendChild(errDiv);
           } else if (gadgetId) {
             const previousQty = parseInt(activeQuantities[gadgetId], 10) || 0;
@@ -300,7 +300,7 @@
               hasError = true;
               const errDiv = document.createElement('div');
               errDiv.className = 'form-error frontend-error';
-              errDiv.textContent = 'You have already requested maximum gadgets.';
+              errDiv.textContent = 'You already have maximum active gadgets for this type.';
               qtyInput.parentNode.appendChild(errDiv);
             }
           }

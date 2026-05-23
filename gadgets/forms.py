@@ -60,7 +60,7 @@ class RequestForm(forms.Form):
 
         if quantity and quantity > 10:
             raise forms.ValidationError(
-                "You have already requested maximum gadgets."
+                "Maximum 10 quantity allowed per gadget."
             )
 
         if gadget and quantity:
@@ -97,7 +97,7 @@ class BaseRequestFormSet(BaseFormSet):
 
             if quantity > 10:
                 raise forms.ValidationError(
-                    "You have already requested maximum gadgets."
+                    "Maximum 10 quantity allowed per gadget."
                 )
 
             if gadget:
@@ -117,7 +117,7 @@ class BaseRequestFormSet(BaseFormSet):
 
                     if active_qty + quantity > 10:
                         raise forms.ValidationError(
-                            "You have already requested maximum gadgets."
+                            "You already have maximum active gadgets for this type."
                         )
 
 RequestFormSet = formset_factory(RequestForm, formset=BaseRequestFormSet, extra=1)
